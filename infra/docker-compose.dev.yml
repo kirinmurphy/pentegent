@@ -1,0 +1,28 @@
+services:
+  scanner:
+    build:
+      context: ..
+      dockerfile: scanner/Dockerfile
+      target: builder
+    command: npx tsx watch src/index.ts
+    working_dir: /app/scanner
+    volumes:
+      - ../shared/src:/app/shared/src
+      - ../scanner/src:/app/scanner/src
+      - scanner-data:/data
+    environment:
+      - SCANNER_PORT=8080
+      - SCANNER_HOST=0.0.0.0
+      - DB_PATH=/data/scanner.sqlite
+      - REPORTS_DIR=/data/reports
+
+  controller:
+    build:
+      context: ..
+      dockerfile: controller/Dockerfile
+      target: builder
+    command: npx tsx watch src/index.ts
+    working_dir: /app/controller
+    volumes:
+      - ../shared/src:/app/shared/src
+      - ../controller/src:/app/controller/src

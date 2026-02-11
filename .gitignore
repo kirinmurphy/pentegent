@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.tsbuildinfo
+.env
+/data/
+reports/
+.claude/settings.local.json
