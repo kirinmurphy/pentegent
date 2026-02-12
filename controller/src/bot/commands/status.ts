@@ -3,6 +3,7 @@ import { TERMINAL_STATUSES } from "@penetragent/shared";
 import type { JobPublic } from "@penetragent/shared";
 import type { ScannerClient } from "../../scanner-client/client.js";
 import { handleCommandError } from "../utils/error-handler.js";
+import { formatSummary } from "../utils/format-summary.js";
 
 function formatJob(job: JobPublic): string {
   const lines = [
@@ -28,13 +29,7 @@ function formatJob(job: JobPublic): string {
     const summary = job.summaryJson as Record<string, unknown>;
     lines.push("");
     lines.push("Summary:");
-    for (const [key, value] of Object.entries(summary)) {
-      if (Array.isArray(value)) {
-        lines.push(`  ${key}: ${value.join(", ") || "none"}`);
-      } else {
-        lines.push(`  ${key}: ${value}`);
-      }
-    }
+    lines.push(...formatSummary(summary));
 
     lines.push("");
     lines.push("Note:");

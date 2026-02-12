@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HEADERS_CONFIG } from "./headers-config.js";
 
 export interface HeaderGrade {
   header: string;
@@ -21,7 +22,8 @@ export interface HeadersSummary {
   good: number;
   weak: number;
   missing: number;
-  infoLeakage: string[];
+  infoLeakage: number;
+  criticalFindings: string[];
 }
 
 export function gradeHsts(value: string | null): HeaderGrade {
@@ -207,10 +209,8 @@ export async function runHeadersScan(
   const redirectChain: string[] = [];
   let currentUrl = baseUrl;
   let response: Response;
-  const maxRedirects = 10;
 
-  // Follow redirects manually to record the chain
-  for (let i = 0; i < maxRedirects; i++) {
+  for (let i = 0; i < HEADERS_CONFIG.maxRedirects; i++) {
     response = await fetch(currentUrl, { redirect: "manual" });
     redirectChain.push(currentUrl);
 
@@ -250,14 +250,37 @@ export async function runHeadersScan(
     infoLeakage,
   };
 
+  const criticalFindings: string[] = [];
+  const missingHeaders = grades.filter((g) => g.grade === "missing");
+
+  for (const priorityHeader of HEADERS_CONFIG.priorityHeaders) {
+    const match = missingHeaders.find((h) => h.header === priorityHeader);
+    if (match) {
+      criticalFindings.push(`Missing ${match.header.includes("Strict") ? "HSTS" : "CSP"} header`);
+    }
+  }
+
+  for (const header of missingHeaders) {
+    if (criticalFindings.length >= HEADERS_CONFIG.maxCriticalFindings) break;
+    if (HEADERS_CONFIG.priorityHeaders.includes(header.header)) {
+      continue;
+    }
+    criticalFindings.push(`Missing ${header.header} header`);
+  }
+
+  for (const leak of infoLeakage) {
+    if (criticalFindings.length >= HEADERS_CONFIG.maxCriticalFindings) break;
+    criticalFindings.push(`${leak.header} header disclosed: ${leak.value}`);
+  }
+
   const summary: HeadersSummary = {
     good: grades.filter((g) => g.grade === "good").length,
     weak: grades.filter((g) => g.grade === "weak").length,
     missing: grades.filter((g) => g.grade === "missing").length,
-    infoLeakage: infoLeakage.map((l) => `${l.header}: ${l.value}`),
+    infoLeakage: infoLeakage.length,
+    criticalFindings,
   };
 
-  // Write report
   const jobDir = path.join(reportsDir, jobId);
   fs.mkdirSync(jobDir, { recursive: true });
   fs.writeFileSync(

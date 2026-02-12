@@ -10,6 +10,8 @@ const KNOWN_COMMANDS = new Set([
   "scan",
   "status",
   "history",
+  "delete",
+  "confirm",
 ]);
 
 export function parseCommand(text: string): ParsedCommand | null {

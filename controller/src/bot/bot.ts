@@ -8,6 +8,8 @@ import { handleScanTypes } from "./commands/scantypes.js";
 import { handleScan } from "./commands/scan.js";
 import { handleStatus } from "./commands/status.js";
 import { handleHistory } from "./commands/history.js";
+import { handleDelete, handleConfirm } from "./commands/delete.js";
+import { createDeleteConfirmationManager } from "./utils/delete-confirmation.js";
 import { ScannerClient } from "../scanner-client/client.js";
 import { JobPoller } from "../poller/job-poller.js";
 
@@ -25,6 +27,10 @@ export function createBot(config: ControllerConfig): BotContext {
     config.pollIntervalMs,
     config.pollTimeoutMs,
   );
+
+  const confirmationManager = createDeleteConfirmationManager();
+
+  setInterval(() => confirmationManager.cleanupExpired(), 5 * 60 * 1000);
 
   bot.use(allowlistMiddleware(config.telegramAllowedUserId));
 
@@ -54,8 +60,20 @@ export function createBot(config: ControllerConfig): BotContext {
         await handleStatus(ctx, parsed.args, client);
         break;
       case "history":
-        await handleHistory(ctx, client);
+        await handleHistory(ctx, parsed.args, client);
         break;
+      case "delete":
+        await handleDelete(ctx, parsed.args, client, confirmationManager);
+        break;
+      case "confirm":
+        await handleConfirm(ctx, client, confirmationManager);
+        break;
+      default:
+        confirmationManager.clearPending(ctx.chat!.id);
+    }
+
+    if (parsed.command !== "confirm" && parsed.command !== "delete") {
+      confirmationManager.clearPending(ctx.chat!.id);
     }
   });
 
