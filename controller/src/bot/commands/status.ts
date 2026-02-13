@@ -1,9 +1,11 @@
 import type { Context } from "grammy";
-import { TERMINAL_STATUSES } from "@penetragent/shared";
-import type { JobPublic } from "@penetragent/shared";
+import { TERMINAL_STATUSES, SCAN_TYPES } from "@penetragent/shared";
+import type { JobPublic, ScanTypeId } from "@penetragent/shared";
 import type { ScannerClient } from "../../scanner-client/client.js";
 import { handleCommandError } from "../utils/error-handler.js";
 import { formatSummary } from "../utils/format-summary.js";
+import { formatHumanDate } from "../utils/format-date.js";
+import { formatDuration } from "../utils/format-duration.js";
 import { CHAT_ACTION } from "../constants.js";
 
 export async function handleStatus(params: {
@@ -32,13 +34,22 @@ function formatJob(job: JobPublic): string {
   const lines = [
     `Job: ${job.jobId}`,
     `Target: ${job.targetId}`,
-    `Scan Type: ${job.scanType}`,
-    `Status: ${job.status}`,
-    `Created: ${job.createdAt}`,
   ];
 
-  if (job.startedAt) lines.push(`Started: ${job.startedAt}`);
-  if (job.finishedAt) lines.push(`Finished: ${job.finishedAt}`);
+  if (job.scanType !== "all") {
+    const scanTypeName = SCAN_TYPES[job.scanType as ScanTypeId]?.name || job.scanType;
+    lines.push(`Scan Type: ${scanTypeName}`);
+  }
+
+  lines.push(`Status: ${job.status}`);
+
+  if (job.finishedAt && job.createdAt) {
+    const duration = formatDuration(job.createdAt, job.finishedAt);
+    const formattedDate = formatHumanDate(job.finishedAt);
+    lines.push(`Finished: ${formattedDate} (completed in ${duration})`);
+  } else if (job.createdAt) {
+    lines.push(`Created: ${formatHumanDate(job.createdAt)}`);
+  }
 
   if (job.errorCode) {
     lines.push(`Error: ${job.errorCode}`);
