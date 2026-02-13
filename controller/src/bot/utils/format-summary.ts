@@ -1,11 +1,3 @@
-/**
- * Formats a job summary object into human-readable lines.
- * Handles nested objects, arrays, and primitive values.
- *
- * @param summary - The summary object to format
- * @param indent - The indentation string (default: "  ")
- * @returns Array of formatted lines
- */
 export function formatSummary(
   summary: Record<string, unknown>,
   indent = "  ",
@@ -13,33 +5,38 @@ export function formatSummary(
   const lines: string[] = [];
 
   for (const [key, value] of Object.entries(summary)) {
+    if (key === "criticalFindings" && Array.isArray(value) && value.length > 0) {
+      lines.push(...formatCriticalFindings(value, indent));
+      continue;
+    }
+
     if (Array.isArray(value)) {
-      // Special handling for criticalFindings
-      if (key === "criticalFindings" && value.length > 0) {
-        if (value.length === 1) {
-          // Single finding - show inline
-          lines.push(`${indent}${key}: ${value[0]}`);
-        } else {
-          // Multiple findings - show as bullet list
-          lines.push("");
-          lines.push("Critical Findings:");
-          for (const finding of value) {
-            lines.push(`  • ${finding}`);
-          }
-        }
-      } else {
-        // Regular arrays - join with commas
-        lines.push(`${indent}${key}: ${value.join(", ") || "none"}`);
-      }
-    } else if (typeof value === "object" && value !== null) {
+      lines.push(`${indent}${key}: ${value.join(", ") || "none"}`);
+      continue;
+    }
+
+    if (typeof value === "object" && value !== null) {
       lines.push(`${indent}${key}:`);
       for (const [nestedKey, nestedValue] of Object.entries(value)) {
         lines.push(`${indent}  ${nestedKey}: ${nestedValue}`);
       }
-    } else {
-      lines.push(`${indent}${key}: ${value}`);
+      continue;
     }
+
+    lines.push(`${indent}${key}: ${value}`);
   }
 
+  return lines;
+}
+
+function formatCriticalFindings(findings: unknown[], indent: string): string[] {
+  if (findings.length === 1) {
+    return [`${indent}criticalFindings: ${findings[0]}`];
+  }
+
+  const lines = ["", "Critical Findings:"];
+  for (const finding of findings) {
+    lines.push(`  • ${finding}`);
+  }
   return lines;
 }

@@ -1,4 +1,4 @@
-import { CRAWL_CONFIG } from "./crawl-config.js";
+import { CRAWL_CONFIG } from "../scan-config.js";
 
 export function checkSecurityIssues(
   response: Response,

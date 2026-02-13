@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { CRAWL_CONFIG } from "./crawl-config.js";
-import { extractLinks } from "./extract-links.js";
-import { checkSecurityIssues } from "./check-security-issues.js";
+import { CRAWL_CONFIG } from "../scan-config.js";
+import { crawlPage } from "./crawl-page.js";
 
 export interface CrawlPage {
   url: string;
@@ -30,61 +29,24 @@ export async function runCrawlScan(
   reportsDir: string,
   jobId: string,
 ): Promise<{ report: CrawlReport; summary: CrawlSummary }> {
-  const visited: Set<string> = new Set();
+  const queued = new Set<string>([baseUrl]);
   const toVisit: string[] = [baseUrl];
   const pages: CrawlPage[] = [];
-  const allFindings: Set<string> = new Set();
 
   while (toVisit.length > 0 && pages.length < CRAWL_CONFIG.maxPages) {
     const url = toVisit.shift()!;
-    if (visited.has(url)) continue;
-    visited.add(url);
+    const { page, links } = await crawlPage(url);
+    pages.push(page);
 
-    try {
-      const response = await fetch(url, {
-        redirect: "follow",
-        headers: {
-          "User-Agent": CRAWL_CONFIG.userAgent,
-        },
-      });
-
-      const contentType = response.headers.get("content-type");
-      const isHtml = contentType?.includes("text/html");
-
-      let body = "";
-      if (isHtml) {
-        body = await response.text();
+    for (const link of links) {
+      if (!queued.has(link)) {
+        queued.add(link);
+        toVisit.push(link);
       }
-
-      const securityIssues = checkSecurityIssues(response, body);
-      securityIssues.forEach((issue) => allFindings.add(issue));
-
-      pages.push({
-        url,
-        statusCode: response.status,
-        contentType,
-        securityIssues,
-      });
-
-      if (isHtml && pages.length < CRAWL_CONFIG.maxPages) {
-        const links = extractLinks(body, url);
-        for (const link of links) {
-          if (!visited.has(link) && !toVisit.includes(link)) {
-            toVisit.push(link);
-          }
-        }
-      }
-    } catch (err) {
-      pages.push({
-        url,
-        statusCode: 0,
-        contentType: null,
-        securityIssues: [
-          `Failed to fetch: ${err instanceof Error ? err.message : String(err)}`,
-        ],
-      });
     }
   }
+
+  const allFindings = new Set(pages.flatMap((p) => p.securityIssues));
 
   const report: CrawlReport = {
     startUrl: baseUrl,
@@ -94,11 +56,10 @@ export async function runCrawlScan(
     timestamp: new Date().toISOString(),
   };
 
-  const criticalFindings = report.findings.filter(
-    (finding) =>
-      CRAWL_CONFIG.criticalFindingPatterns.some((pattern) =>
-        finding.includes(pattern),
-      ),
+  const criticalFindings = report.findings.filter((finding) =>
+    CRAWL_CONFIG.criticalFindingPatterns.some((pattern) =>
+      finding.includes(pattern),
+    ),
   );
 
   const summary: CrawlSummary = {

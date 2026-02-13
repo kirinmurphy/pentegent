@@ -129,7 +129,7 @@ Now DM your bot in Telegram: `help`, `scan https://example.com`, `history`, etc.
 
 **Examples:**
 
-```
+```text
 help
 scan https://example.com                              # defaults to 'headers' scan
 scan https://example.com headers                      # quick single-page check

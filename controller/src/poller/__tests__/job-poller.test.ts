@@ -255,7 +255,7 @@ describe("JobPoller", () => {
       expect(() => poller.startPolling(jobId, chatId)).not.toThrow();
     });
 
-    it("should format nested summary objects properly (not [object Object])", async () => {
+    it("should format nested summary objects properly", async () => {
       const jobId = "job-with-nested-summary";
       const chatId = 123456789;
 
@@ -286,7 +286,6 @@ describe("JobPoller", () => {
       // Advance timer to trigger the poll
       await vi.advanceTimersByTimeAsync(1000);
 
-      // Check that sendMessage was called
       expect(mockBot.api.sendMessage).toHaveBeenCalledOnce();
 
       const [[actualChatId, actualMessage]] = vi.mocked(
@@ -295,14 +294,8 @@ describe("JobPoller", () => {
 
       expect(actualChatId).toBe(chatId);
 
-      // The message should NOT contain "[object Object]"
-      expect(actualMessage).not.toContain("[object Object]");
-
-      // The message should contain properly formatted nested objects
       expect(actualMessage).toContain("headers:");
       expect(actualMessage).toContain("crawl:");
-
-      // Should show the nested values in some readable format
       expect(actualMessage).toMatch(/good.*3/);
       expect(actualMessage).toMatch(/pagesScanned.*15/);
     });

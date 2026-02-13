@@ -1,146 +1,30 @@
 import { describe, it, expect } from "vitest";
 import { detectIdentifier } from "../detect-identifier.js";
+import type { IdentifierResult } from "../detect-identifier.js";
+
+const cases: { name: string; input: string; expected: IdentifierResult }[] = [
+  { name: "UUID jobId", input: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", expected: { type: "jobId", value: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
+  { name: "uppercase UUID jobId", input: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890", expected: { type: "jobId", value: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890" } },
+  { name: "domain without protocol", input: "example.com", expected: { type: "targetId", value: "example.com" } },
+  { name: "domain with path", input: "example.com/admin", expected: { type: "targetId", value: "example.com/admin" } },
+  { name: "https URL", input: "https://example.com", expected: { type: "url", value: "https://example.com" } },
+  { name: "http URL", input: "http://example.com", expected: { type: "url", value: "http://example.com" } },
+  { name: "URL with path", input: "https://example.com/admin", expected: { type: "url", value: "https://example.com/admin" } },
+  { name: "mixed case URL", input: "HTTPS://EXAMPLE.COM", expected: { type: "url", value: "HTTPS://EXAMPLE.COM" } },
+  { name: "non-UUID alphanumeric → targetId", input: "abc123def456", expected: { type: "targetId", value: "abc123def456" } },
+  { name: "localhost", input: "localhost", expected: { type: "targetId", value: "localhost" } },
+  { name: "localhost with port", input: "localhost:3000", expected: { type: "targetId", value: "localhost:3000" } },
+  { name: "subdomain", input: "api.example.com", expected: { type: "targetId", value: "api.example.com" } },
+  { name: "domain with port", input: "example.com:8080", expected: { type: "targetId", value: "example.com:8080" } },
+  { name: "IP address", input: "192.168.1.1", expected: { type: "targetId", value: "192.168.1.1" } },
+  { name: "empty string → unknown", input: "", expected: { type: "unknown", value: "" } },
+  { name: "too short (< 3 chars) → unknown", input: "ab", expected: { type: "unknown", value: "ab" } },
+];
 
 describe("detectIdentifier", () => {
-  it("should detect jobId pattern (8+ alphanumeric)", () => {
-    const result = detectIdentifier("abc123def456");
-
-    expect(result).toEqual({
-      type: "jobId",
-      value: "abc123def456",
+  for (const { name, input, expected } of cases) {
+    it(name, () => {
+      expect(detectIdentifier(input)).toEqual(expected);
     });
-  });
-
-  it("should detect short jobId (8 chars)", () => {
-    const result = detectIdentifier("12345678");
-
-    expect(result).toEqual({
-      type: "jobId",
-      value: "12345678",
-    });
-  });
-
-  it("should detect targetId (domain without protocol)", () => {
-    const result = detectIdentifier("example.com");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "example.com",
-    });
-  });
-
-  it("should detect targetId with path", () => {
-    const result = detectIdentifier("example.com/admin");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "example.com/admin",
-    });
-  });
-
-  it("should detect full URL with https", () => {
-    const result = detectIdentifier("https://example.com");
-
-    expect(result).toEqual({
-      type: "url",
-      value: "https://example.com",
-    });
-  });
-
-  it("should detect full URL with http", () => {
-    const result = detectIdentifier("http://example.com");
-
-    expect(result).toEqual({
-      type: "url",
-      value: "http://example.com",
-    });
-  });
-
-  it("should detect full URL with path", () => {
-    const result = detectIdentifier("https://example.com/admin");
-
-    expect(result).toEqual({
-      type: "url",
-      value: "https://example.com/admin",
-    });
-  });
-
-  it("should prefer jobId over targetId for ambiguous short strings", () => {
-    // "abc123de" could be a subdomain, but if it's 8+ alphanumeric, it's more likely a jobId
-    const result = detectIdentifier("abc123de");
-
-    expect(result.type).toBe("jobId");
-  });
-
-  it("should detect targetId when it contains dots", () => {
-    const result = detectIdentifier("api.example.com");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "api.example.com",
-    });
-  });
-
-  it("should handle localhost as targetId", () => {
-    const result = detectIdentifier("localhost:3000");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "localhost:3000",
-    });
-  });
-
-  it("should handle IP addresses as targetId", () => {
-    const result = detectIdentifier("192.168.1.1");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "192.168.1.1",
-    });
-  });
-
-  it("should return unknown for empty string", () => {
-    const result = detectIdentifier("");
-
-    expect(result).toEqual({
-      type: "unknown",
-      value: "",
-    });
-  });
-
-  it("should return unknown for very short strings (< 3 chars)", () => {
-    const result = detectIdentifier("ab");
-
-    expect(result).toEqual({
-      type: "unknown",
-      value: "ab",
-    });
-  });
-
-  it("should handle mixed case URLs", () => {
-    const result = detectIdentifier("HTTPS://EXAMPLE.COM");
-
-    expect(result).toEqual({
-      type: "url",
-      value: "HTTPS://EXAMPLE.COM",
-    });
-  });
-
-  it("should detect targetId with port", () => {
-    const result = detectIdentifier("example.com:8080");
-
-    expect(result).toEqual({
-      type: "targetId",
-      value: "example.com:8080",
-    });
-  });
-
-  it("should handle jobId with dashes or underscores", () => {
-    const result = detectIdentifier("abc-123_def");
-
-    expect(result).toEqual({
-      type: "jobId",
-      value: "abc-123_def",
-    });
-  });
+  }
 });

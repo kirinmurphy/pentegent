@@ -32,7 +32,6 @@ async function startRedirectServer(
 ): Promise<{ url: string; servers: FastifyInstance[] }> {
   const servers: FastifyInstance[] = [];
 
-  // Create final server first
   const finalServer = Fastify();
   finalServer.get("/", async (_req, reply) => {
     for (const [key, value] of Object.entries(finalHeaders)) {
@@ -46,7 +45,6 @@ async function startRedirectServer(
   });
   servers.push(finalServer);
 
-  // Build redirect chain backwards
   let nextUrl = finalAddress;
   const chainServers: FastifyInstance[] = [];
 

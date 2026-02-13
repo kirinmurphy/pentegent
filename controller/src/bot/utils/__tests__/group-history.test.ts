@@ -124,7 +124,7 @@ describe("groupJobsByTarget", () => {
   });
 
   it("should handle empty array", () => {
-    const jobs: { jobId: string; targetId: string; status: string; createdAt: string }[] = [];
+    const jobs: { jobId: string; targetId: string; targetUrl: string; status: string; createdAt: string }[] = [];
 
     const grouped = groupJobsByTarget(jobs);
 

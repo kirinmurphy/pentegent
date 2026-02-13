@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { HEADERS_CONFIG } from "./headers-config.js";
+import { HEADERS_CONFIG, GRADE, type Grade } from "./scan-config.js";
 
 export interface HeaderGrade {
   header: string;
   value: string | null;
-  grade: "good" | "weak" | "missing";
+  grade: Grade;
   reason: string;
 }
 
@@ -31,7 +31,7 @@ export function gradeHsts(value: string | null): HeaderGrade {
     return {
       header: "Strict-Transport-Security",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -45,7 +45,7 @@ export function gradeHsts(value: string | null): HeaderGrade {
     return {
       header: "Strict-Transport-Security",
       value,
-      grade: "good",
+      grade: GRADE.GOOD,
       reason: `max-age=${maxAge} with includeSubDomains`,
     };
   }
@@ -53,7 +53,7 @@ export function gradeHsts(value: string | null): HeaderGrade {
   return {
     header: "Strict-Transport-Security",
     value,
-    grade: "weak",
+    grade: GRADE.WEAK,
     reason:
       maxAge < oneYear
         ? `max-age=${maxAge} is less than 1 year (${oneYear})`
@@ -66,7 +66,7 @@ export function gradeCsp(value: string | null): HeaderGrade {
     return {
       header: "Content-Security-Policy",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -81,7 +81,7 @@ export function gradeCsp(value: string | null): HeaderGrade {
     return {
       header: "Content-Security-Policy",
       value,
-      grade: "weak",
+      grade: GRADE.WEAK,
       reason: `Contains ${issues.join(", ")}`,
     };
   }
@@ -89,7 +89,7 @@ export function gradeCsp(value: string | null): HeaderGrade {
   return {
     header: "Content-Security-Policy",
     value,
-    grade: "good",
+    grade: GRADE.GOOD,
     reason: "Present without unsafe directives",
   };
 }
@@ -101,7 +101,7 @@ export function gradeXContentTypeOptions(
     return {
       header: "X-Content-Type-Options",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -109,7 +109,7 @@ export function gradeXContentTypeOptions(
   return {
     header: "X-Content-Type-Options",
     value,
-    grade: value.toLowerCase() === "nosniff" ? "good" : "weak",
+    grade: value.toLowerCase() === "nosniff" ? GRADE.GOOD : GRADE.WEAK,
     reason:
       value.toLowerCase() === "nosniff"
         ? "Correctly set to nosniff"
@@ -122,7 +122,7 @@ export function gradeXFrameOptions(value: string | null): HeaderGrade {
     return {
       header: "X-Frame-Options",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -132,7 +132,7 @@ export function gradeXFrameOptions(value: string | null): HeaderGrade {
     return {
       header: "X-Frame-Options",
       value,
-      grade: "good",
+      grade: GRADE.GOOD,
       reason: `Set to ${upper}`,
     };
   }
@@ -140,7 +140,7 @@ export function gradeXFrameOptions(value: string | null): HeaderGrade {
   return {
     header: "X-Frame-Options",
     value,
-    grade: "weak",
+    grade: GRADE.WEAK,
     reason: `Unexpected value: ${value}`,
   };
 }
@@ -150,7 +150,7 @@ export function gradeReferrerPolicy(value: string | null): HeaderGrade {
     return {
       header: "Referrer-Policy",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -159,7 +159,7 @@ export function gradeReferrerPolicy(value: string | null): HeaderGrade {
     return {
       header: "Referrer-Policy",
       value,
-      grade: "weak",
+      grade: GRADE.WEAK,
       reason: "Set to unsafe-url which leaks full URL",
     };
   }
@@ -167,7 +167,7 @@ export function gradeReferrerPolicy(value: string | null): HeaderGrade {
   return {
     header: "Referrer-Policy",
     value,
-    grade: "good",
+    grade: GRADE.GOOD,
     reason: `Set to ${value}`,
   };
 }
@@ -177,7 +177,7 @@ export function gradePermissionsPolicy(value: string | null): HeaderGrade {
     return {
       header: "Permissions-Policy",
       value: null,
-      grade: "missing",
+      grade: GRADE.MISSING,
       reason: "Header not present",
     };
   }
@@ -185,7 +185,7 @@ export function gradePermissionsPolicy(value: string | null): HeaderGrade {
   return {
     header: "Permissions-Policy",
     value,
-    grade: "good",
+    grade: GRADE.GOOD,
     reason: "Present",
   };
 }
@@ -251,7 +251,7 @@ export async function runHeadersScan(
   };
 
   const criticalFindings: string[] = [];
-  const missingHeaders = grades.filter((g) => g.grade === "missing");
+  const missingHeaders = grades.filter((g) => g.grade === GRADE.MISSING);
 
   for (const priorityHeader of HEADERS_CONFIG.priorityHeaders) {
     const match = missingHeaders.find((h) => h.header === priorityHeader);
@@ -274,9 +274,9 @@ export async function runHeadersScan(
   }
 
   const summary: HeadersSummary = {
-    good: grades.filter((g) => g.grade === "good").length,
-    weak: grades.filter((g) => g.grade === "weak").length,
-    missing: grades.filter((g) => g.grade === "missing").length,
+    good: grades.filter((g) => g.grade === GRADE.GOOD).length,
+    weak: grades.filter((g) => g.grade === GRADE.WEAK).length,
+    missing: grades.filter((g) => g.grade === GRADE.MISSING).length,
     infoLeakage: infoLeakage.length,
     criticalFindings,
   };

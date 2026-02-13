@@ -25,21 +25,11 @@ function formatJob(job: JobPublic): string {
     if (job.errorMessage) lines.push(`Message: ${job.errorMessage}`);
   }
 
-  if (
-    job.summaryJson &&
-    TERMINAL_STATUSES.has(job.status)
-  ) {
+  if (job.summaryJson && TERMINAL_STATUSES.has(job.status)) {
     const summary = job.summaryJson as Record<string, unknown>;
     lines.push("");
     lines.push("Summary:");
     lines.push(...formatSummary(summary));
-
-    lines.push("");
-    lines.push("Note:");
-    lines.push("  • good = headers properly configured");
-    lines.push("  • weak = headers present but not optimal");
-    lines.push("  • missing = security headers not found");
-    lines.push("  • infoLeakage = headers revealing server details");
   }
 
   return lines.join("\n");
@@ -86,7 +76,9 @@ export class JobPoller {
 
   startPolling(jobId: string, chatId: number): void {
     if (this.polls.has(jobId)) {
-      console.log(`Polling already active for job ${jobId}, skipping duplicate`);
+      console.log(
+        `Polling already active for job ${jobId}, skipping duplicate`,
+      );
       return;
     }
 

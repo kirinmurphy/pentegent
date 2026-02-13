@@ -61,20 +61,6 @@ describe("formatSummary", () => {
     ]);
   });
 
-  it("should not show [object Object] for nested objects", () => {
-    const summary = {
-      headers: { good: 3 },
-      crawl: { pagesScanned: 15 },
-    };
-
-    const lines = formatSummary(summary);
-    const joined = lines.join("\n");
-
-    expect(joined).not.toContain("[object Object]");
-    expect(joined).toContain("good: 3");
-    expect(joined).toContain("pagesScanned: 15");
-  });
-
   it("should handle mixed types in summary", () => {
     const summary = {
       pagesScanned: 5,

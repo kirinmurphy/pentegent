@@ -13,10 +13,7 @@ describe("Crawl Scan", () => {
   const baseUrl = `http://localhost:${port}`;
 
   beforeAll(async () => {
-    // Create temp reports directory
     testReportsDir = fs.mkdtempSync(path.join(os.tmpdir(), "crawl-test-"));
-
-    // Setup test server
     testServer = Fastify();
 
     testServer.get("/", async (request, reply) => {

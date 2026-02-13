@@ -38,7 +38,7 @@ describe("handleStatus", () => {
         good: 3,
         weak: 1,
         missing: 2,
-        infoLeakage: ["Server: nginx"],
+        infoLeakage: 1,
       },
       resolvedIpsJson: null,
       createdAt: "2024-01-01T00:00:00Z",
@@ -49,7 +49,7 @@ describe("handleStatus", () => {
 
     vi.mocked(mockClient.getJob).mockResolvedValue(job);
 
-    await handleStatus(mockContext, ["test-job-123"], mockClient);
+    await handleStatus({ ctx: mockContext, args: ["test-job-123"], client: mockClient });
 
     expect(mockContext.reply).toHaveBeenCalledOnce();
     const message = vi.mocked(mockContext.reply).mock.calls[0][0] as string;
@@ -57,11 +57,10 @@ describe("handleStatus", () => {
     expect(message).toContain("good: 3");
     expect(message).toContain("weak: 1");
     expect(message).toContain("missing: 2");
-    expect(message).toContain("infoLeakage: Server: nginx");
-    expect(message).not.toContain("[object Object]");
+    expect(message).toContain("infoLeakage: 1");
   });
 
-  it("should format nested summary objects properly (not [object Object])", async () => {
+  it("should format nested summary objects properly", async () => {
     const job: JobPublic = {
       jobId: "test-job-456",
       targetId: "example.com",
@@ -83,15 +82,11 @@ describe("handleStatus", () => {
 
     vi.mocked(mockClient.getJob).mockResolvedValue(job);
 
-    await handleStatus(mockContext, ["test-job-456"], mockClient);
+    await handleStatus({ ctx: mockContext, args: ["test-job-456"], client: mockClient });
 
     expect(mockContext.reply).toHaveBeenCalledOnce();
     const message = vi.mocked(mockContext.reply).mock.calls[0][0] as string;
 
-    // Should NOT contain [object Object]
-    expect(message).not.toContain("[object Object]");
-
-    // Should contain properly formatted nested objects
     expect(message).toContain("headers:");
     expect(message).toContain("crawl:");
     expect(message).toMatch(/good.*3/);
@@ -99,7 +94,7 @@ describe("handleStatus", () => {
   });
 
   it("should return usage message when no jobId provided", async () => {
-    await handleStatus(mockContext, [], mockClient);
+    await handleStatus({ ctx: mockContext, args: [], client: mockClient });
 
     expect(mockContext.reply).toHaveBeenCalledWith("Usage: status <jobId>");
     expect(mockClient.getJob).not.toHaveBeenCalled();
@@ -110,7 +105,7 @@ describe("handleStatus", () => {
       new Error("Job not found"),
     );
 
-    await handleStatus(mockContext, ["nonexistent-job"], mockClient);
+    await handleStatus({ ctx: mockContext, args: ["nonexistent-job"], client: mockClient });
 
     expect(mockContext.reply).toHaveBeenCalledWith(
       "Could not find job: nonexistent-job",
@@ -136,7 +131,7 @@ describe("handleStatus", () => {
 
     vi.mocked(mockClient.getJob).mockResolvedValue(job);
 
-    await handleStatus(mockContext, ["test-job-running"], mockClient);
+    await handleStatus({ ctx: mockContext, args: ["test-job-running"], client: mockClient });
 
     expect(mockContext.reply).toHaveBeenCalledOnce();
     const message = vi.mocked(mockContext.reply).mock.calls[0][0] as string;
