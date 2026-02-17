@@ -148,6 +148,110 @@ export const SECURITY_EXPLANATIONS: Record<string, SecurityExplanation> = {
       },
     },
   },
+
+  "Certificate expired": {
+    what: "The SSL/TLS certificate has passed its validity date and is no longer trusted by browsers.",
+    why: "Expired certificates cause browser security warnings that drive users away and indicate the site may be unmaintained or compromised.",
+    remediation: {
+      generic: "Renew the certificate immediately. Consider using Let's Encrypt with auto-renewal (certbot renew) to prevent future expirations.",
+      frameworks: {
+        "nginx": "certbot --nginx -d yourdomain.com && systemctl reload nginx",
+        "Apache": "certbot --apache -d yourdomain.com && systemctl reload apache2",
+      },
+    },
+  },
+
+  "Self-signed certificate": {
+    what: "The certificate was signed by the server itself rather than a trusted Certificate Authority.",
+    why: "Self-signed certificates are not trusted by browsers, causing security warnings. They also make the site vulnerable to man-in-the-middle attacks since there is no third-party verification of identity.",
+    remediation: {
+      generic: "Replace with a certificate from a trusted CA. Let's Encrypt provides free, automated certificates: certbot certonly --standalone -d yourdomain.com",
+      frameworks: {
+        "nginx": "certbot --nginx -d yourdomain.com",
+        "Apache": "certbot --apache -d yourdomain.com",
+      },
+    },
+  },
+
+  "Hostname mismatch": {
+    what: "The certificate's Subject Alternative Names (SANs) do not include the hostname being accessed.",
+    why: "Browsers will show a security warning because the certificate does not prove the identity of the server being accessed. This could indicate a misconfigured server or a man-in-the-middle attack.",
+    remediation: {
+      generic: "Reissue the certificate with the correct hostname in the Subject Alternative Names. For Let's Encrypt: certbot certonly -d yourdomain.com -d www.yourdomain.com",
+    },
+  },
+
+  "TLS 1.0 supported": {
+    what: "The server supports TLS 1.0, which has known security vulnerabilities including BEAST and POODLE attacks.",
+    why: "TLS 1.0 is deprecated by RFC 8996 (2021) and is no longer considered secure. PCI DSS compliance requires disabling TLS 1.0.",
+    remediation: {
+      generic: "Disable TLS 1.0 in your server configuration. Minimum recommended version is TLS 1.2.",
+      frameworks: {
+        "nginx": "ssl_protocols TLSv1.2 TLSv1.3;",
+        "Apache": "SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1",
+      },
+    },
+  },
+
+  "TLS 1.1 supported": {
+    what: "The server supports TLS 1.1, which is deprecated and has known weaknesses.",
+    why: "TLS 1.1 is deprecated by RFC 8996 (2021). Major browsers have removed TLS 1.1 support.",
+    remediation: {
+      generic: "Disable TLS 1.1 in your server configuration. Minimum recommended version is TLS 1.2.",
+      frameworks: {
+        "nginx": "ssl_protocols TLSv1.2 TLSv1.3;",
+        "Apache": "SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1",
+      },
+    },
+  },
+
+  "TLS 1.2 not supported": {
+    what: "The server does not support TLS 1.2, the minimum recommended protocol version.",
+    why: "TLS 1.2 is required for compatibility with modern browsers and for PCI DSS compliance. Without it, clients may be forced to use insecure older protocols.",
+    remediation: {
+      generic: "Enable TLS 1.2 (and preferably TLS 1.3) in your server configuration.",
+      frameworks: {
+        "nginx": "ssl_protocols TLSv1.2 TLSv1.3;",
+        "Apache": "SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1",
+      },
+    },
+  },
+
+  "Weak cipher": {
+    what: "The server negotiated a cipher suite that uses known-weak algorithms (RC4, DES, 3DES, EXPORT, NULL, or anonymous key exchange).",
+    why: "Weak ciphers can be broken by attackers, allowing them to decrypt intercepted traffic and steal sensitive data.",
+    remediation: {
+      generic: "Configure your server to use only strong cipher suites. Recommended: ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20",
+      frameworks: {
+        "nginx": "ssl_ciphers 'ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20';\nssl_prefer_server_ciphers on;",
+        "Apache": "SSLCipherSuite ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20\nSSLHonorCipherOrder on",
+      },
+    },
+  },
+
+  "No forward secrecy": {
+    what: "The negotiated cipher suite does not support forward secrecy (PFS).",
+    why: "Without forward secrecy, if the server's private key is ever compromised, all past encrypted traffic can be decrypted retroactively.",
+    remediation: {
+      generic: "Configure your server to prefer cipher suites with ECDHE or DHE key exchange, which provide forward secrecy.",
+      frameworks: {
+        "nginx": "ssl_ciphers 'ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20';\nssl_prefer_server_ciphers on;",
+        "Apache": "SSLCipherSuite ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20\nSSLHonorCipherOrder on",
+      },
+    },
+  },
+
+  "Certificate chain incomplete": {
+    what: "The server did not provide a complete certificate chain back to a trusted root CA.",
+    why: "An incomplete chain may cause some clients to reject the certificate, especially on mobile devices or older systems that don't have the intermediate CA cached.",
+    remediation: {
+      generic: "Configure your server to send the full certificate chain. Concatenate your certificate with the intermediate CA certificates in the correct order.",
+      frameworks: {
+        "nginx": "ssl_certificate /path/to/fullchain.pem;  # includes intermediates",
+        "Apache": "SSLCertificateChainFile /path/to/chain.pem",
+      },
+    },
+  },
 };
 
 export function findExplanation(key: string): SecurityExplanation | undefined {

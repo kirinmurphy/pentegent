@@ -5,6 +5,7 @@ interface TechRule {
   urlPatterns?: RegExp[];
   headerMatches?: { header: string; pattern: RegExp }[];
   metaGeneratorPatterns?: RegExp[];
+  certIssuerPatterns?: RegExp[];
 }
 
 const TECH_RULES: TechRule[] = [
@@ -64,6 +65,11 @@ const TECH_RULES: TechRule[] = [
   {
     name: "Cloudflare",
     headerMatches: [{ header: "Server", pattern: /cloudflare/i }],
+    certIssuerPatterns: [/Cloudflare/i],
+  },
+  {
+    name: "Let's Encrypt",
+    certIssuerPatterns: [/Let's Encrypt|R3$|E1$|R10$|R11$/i],
   },
 ];
 
@@ -71,6 +77,7 @@ interface DetectionInput {
   urls: string[];
   headers: { header: string; value: string }[];
   metaGeneratorValues: string[];
+  tlsCertIssuer?: string;
 }
 
 const CONFIDENCE_RANK = { high: 3, medium: 2, low: 1 } as const;
@@ -102,6 +109,14 @@ export function detectTechnologies(input: DetectionInput): DetectedTechnology[] 
           if (hdr.header === match.header && match.pattern.test(hdr.value)) {
             addDetection(rule.name, "high", `${hdr.header}: ${hdr.value}`);
           }
+        }
+      }
+    }
+
+    if (rule.certIssuerPatterns && input.tlsCertIssuer) {
+      for (const pattern of rule.certIssuerPatterns) {
+        if (pattern.test(input.tlsCertIssuer)) {
+          addDetection(rule.name, "high", `TLS certificate issuer: ${input.tlsCertIssuer}`);
         }
       }
     }

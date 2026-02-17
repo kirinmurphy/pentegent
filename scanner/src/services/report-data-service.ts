@@ -1,6 +1,7 @@
-import type { UnifiedReport, DetectedTechnology } from "@penetragent/shared";
+import type { UnifiedReport, DetectedTechnology, TlsReportData } from "@penetragent/shared";
 import { findExplanation, SECURITY_EXPLANATIONS, type SecurityExplanation } from "../scanTypes/security-explanations.js";
 import { HTTP_SCAN_CONFIG } from "../scanTypes/scan-config.js";
+import { TLS_SCAN_CONFIG } from "../scanTypes/tls/tls-scan-config.js";
 import { computeWorstCaseGrades as computeWorstCaseGradesShared } from "../scanTypes/compute-worst-grades.js";
 
 export interface FrameworkFix {
@@ -36,6 +37,18 @@ export interface PrintChecklistItem {
   frameworkFixes: FrameworkFix[];
 }
 
+export interface TlsProcessedData {
+  host: string;
+  port: number;
+  certificate: TlsReportData["certificate"];
+  chain: TlsReportData["chain"];
+  protocols: TlsReportData["protocols"];
+  cipher: TlsReportData["cipher"];
+  grades: TlsReportData["grades"];
+  gradeSummary: { good: number; weak: number; missing: number };
+  issues: AggregatedIssue[];
+}
+
 export interface ProcessedReportData {
   targetUrl: string;
   timestamp: string;
@@ -49,6 +62,7 @@ export interface ProcessedReportData {
   aiPrompt: AiPromptData | null;
   scannedPages: { url: string; statusCode: number; contentType: string | null }[];
   printChecklist: PrintChecklistItem[];
+  tls: TlsProcessedData | null;
 }
 
 export function slugifyFramework(name: string): string {
@@ -123,14 +137,16 @@ export function computeWorstCaseGrades(
 export function classifyAndSortIssues(config: {
   issueMap: Map<string, { pages: string[] }>;
   detectedTechs: DetectedTechnology[];
+  criticalPatterns?: string[];
 }): AggregatedIssue[] {
   const { issueMap, detectedTechs } = config;
+  const patterns = config.criticalPatterns ?? HTTP_SCAN_CONFIG.criticalFindingPatterns;
   const techNames = detectedTechs.map((t) => t.name);
 
   return Array.from(issueMap.entries())
     .sort((a, b) => b[1].pages.length - a[1].pages.length)
     .map(([issue, { pages }]) => {
-      const isCritical = HTTP_SCAN_CONFIG.criticalFindingPatterns.some((p) => issue.includes(p));
+      const isCritical = patterns.some((p) => issue.includes(p));
       const explanationKey = getExplanationKey(issue);
       const explanation = findExplanation(explanationKey);
 
@@ -190,6 +206,44 @@ export function buildPrintChecklist(config: {
   });
 }
 
+function aggregateTlsIssues(
+  tlsData: TlsReportData,
+): Map<string, { pages: string[] }> {
+  const issueMap = new Map<string, { pages: string[] }>();
+  for (const finding of tlsData.findings) {
+    issueMap.set(finding, { pages: [tlsData.host] });
+  }
+  return issueMap;
+}
+
+function processTlsData(
+  tlsData: TlsReportData,
+  detectedTechs: DetectedTechnology[],
+): TlsProcessedData {
+  const issueMap = aggregateTlsIssues(tlsData);
+  const issues = classifyAndSortIssues({
+    issueMap,
+    detectedTechs,
+    criticalPatterns: TLS_SCAN_CONFIG.criticalFindingPatterns,
+  });
+
+  const good = tlsData.grades.filter((g) => g.grade === "good").length;
+  const weak = tlsData.grades.filter((g) => g.grade === "weak").length;
+  const missing = tlsData.grades.filter((g) => g.grade === "missing").length;
+
+  return {
+    host: tlsData.host,
+    port: tlsData.port,
+    certificate: tlsData.certificate,
+    chain: tlsData.chain,
+    protocols: tlsData.protocols,
+    cipher: tlsData.cipher,
+    grades: tlsData.grades,
+    gradeSummary: { good, weak, missing },
+    issues,
+  };
+}
+
 export function processReportData(report: UnifiedReport): ProcessedReportData {
   const httpData = report.scans.http;
 
@@ -210,11 +264,19 @@ export function processReportData(report: UnifiedReport): ProcessedReportData {
     ? computeWorstCaseGrades(httpData)
     : { good: 0, weak: 0, missing: 0 };
 
-  const aiPrompt = httpData
+  const tlsData = report.scans.tls;
+  const tls = tlsData ? processTlsData(tlsData, report.detectedTechnologies) : null;
+
+  const allFindings = [
+    ...(httpData?.findings ?? []),
+    ...(tlsData?.findings ?? []),
+  ];
+
+  const aiPrompt = allFindings.length > 0
     ? buildAiPromptData({
         targetUrl: report.targetUrl,
         detectedTechs: report.detectedTechnologies,
-        findings: httpData.findings,
+        findings: allFindings,
       })
     : null;
 
@@ -222,7 +284,8 @@ export function processReportData(report: UnifiedReport): ProcessedReportData {
     ? httpData.pages.map((p) => ({ url: p.url, statusCode: p.statusCode, contentType: p.contentType }))
     : [];
 
-  const printChecklist = buildPrintChecklist({ issues, matchedFrameworks });
+  const allIssues = [...issues, ...(tls?.issues ?? [])];
+  const printChecklist = buildPrintChecklist({ issues: allIssues, matchedFrameworks });
 
   const formattedDate = new Date(report.timestamp).toLocaleDateString("en-US", {
     year: "numeric",
@@ -243,5 +306,6 @@ export function processReportData(report: UnifiedReport): ProcessedReportData {
     aiPrompt,
     scannedPages,
     printChecklist,
+    tls,
   };
 }

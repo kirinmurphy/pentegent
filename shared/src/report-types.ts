@@ -49,6 +49,71 @@ export interface HttpSummaryData {
   criticalFindings: string[];
 }
 
+export interface TlsCertificateData {
+  subject: string;
+  issuer: string;
+  validFrom: string;
+  validTo: string;
+  daysUntilExpiry: number;
+  isExpired: boolean;
+  isSelfSigned: boolean;
+  subjectAltNames: string[];
+  hostnameMatch: boolean;
+  serialNumber: string;
+  fingerprint: string;
+}
+
+export interface TlsChainCertificate {
+  subject: string;
+  issuer: string;
+  validFrom: string;
+  validTo: string;
+  isSelfSigned: boolean;
+}
+
+export interface TlsProtocolSupport {
+  protocol: string;
+  supported: boolean;
+  grade: "good" | "weak" | "missing";
+  reason: string;
+}
+
+export interface TlsCipherInfo {
+  name: string;
+  standardName: string;
+  version: string;
+  grade: "good" | "weak" | "missing";
+  reason: string;
+  hasForwardSecrecy: boolean;
+}
+
+export interface TlsGrade {
+  check: string;
+  value: string;
+  grade: "good" | "weak" | "missing";
+  reason: string;
+}
+
+export interface TlsReportData {
+  host: string;
+  port: number;
+  certificate: TlsCertificateData;
+  chain: TlsChainCertificate[];
+  protocols: TlsProtocolSupport[];
+  cipher: TlsCipherInfo;
+  grades: TlsGrade[];
+  findings: string[];
+  timestamp: string;
+}
+
+export interface TlsSummaryData {
+  host: string;
+  good: number;
+  weak: number;
+  missing: number;
+  criticalFindings: string[];
+}
+
 /**
  * Unified Report Structure
  *
@@ -63,10 +128,12 @@ export interface UnifiedReport {
 
   scans: {
     http?: HttpReportData;
+    tls?: TlsReportData;
   };
 
   summary: {
     http?: HttpSummaryData;
+    tls?: TlsSummaryData;
   };
 
   detectedTechnologies: DetectedTechnology[];

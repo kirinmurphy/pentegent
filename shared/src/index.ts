@@ -23,4 +23,11 @@ export type {
   PageData,
   HttpReportData,
   HttpSummaryData,
+  TlsCertificateData,
+  TlsChainCertificate,
+  TlsProtocolSupport,
+  TlsCipherInfo,
+  TlsGrade,
+  TlsReportData,
+  TlsSummaryData,
 } from "./report-types.js";

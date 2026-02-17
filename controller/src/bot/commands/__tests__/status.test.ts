@@ -88,7 +88,7 @@ describe("handleStatus", () => {
     const message = vi.mocked(mockContext.reply).mock.calls[0][0] as string;
 
     expect(message).toContain("headers:");
-    expect(message).toContain("http:");
+    expect(message).toContain("HTTP Analysis:");
     expect(message).toMatch(/Good.*3/);
     expect(message).toMatch(/Pages Scanned.*15/);
   });

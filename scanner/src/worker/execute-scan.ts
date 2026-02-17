@@ -13,6 +13,7 @@ import {
   DnsError,
 } from "../security/verify-public-only.js";
 import { runHttpScan } from "../scanTypes/http/index.js";
+import { runTlsScan } from "../scanTypes/tls/index.js";
 import { createUnifiedReport } from "../services/unified-report-service.js";
 import { writeHtmlReport } from "../services/html-report-service.js";
 
@@ -37,11 +38,30 @@ export async function executeScan(
     throw err;
   }
 
-  try {
-    const { report, summary } = await runHttpScan(target.base_url);
+  const scanType = job.scan_type;
+  const shouldRunHttp = scanType === "http" || scanType === "all";
+  const shouldRunTls = scanType === "tls" || scanType === "all";
 
+  try {
     const reportBuilder = createUnifiedReport(job.id, target.base_url);
-    reportBuilder.addHttpScan(report, summary);
+    const summaryResult: { http?: Record<string, unknown>; tls?: Record<string, unknown> } = {};
+
+    if (shouldRunHttp) {
+      const { report, summary } = await runHttpScan(target.base_url);
+      reportBuilder.addHttpScan(report, summary);
+      summaryResult.http = summary as unknown as Record<string, unknown>;
+    }
+
+    if (shouldRunTls) {
+      try {
+        const { report, summary } = await runTlsScan(target.base_url);
+        reportBuilder.addTlsScan(report, summary);
+        summaryResult.tls = summary as unknown as Record<string, unknown>;
+      } catch (tlsErr) {
+        console.error(`TLS scan failed for job ${job.id}:`, tlsErr);
+      }
+    }
+
     reportBuilder.write(config.reportsDir);
 
     try {
@@ -50,7 +70,10 @@ export async function executeScan(
       console.error(`Failed to write HTML report for job ${job.id}:`, htmlErr);
     }
 
-    transitionToSucceeded(db, job.id, JSON.stringify(summary));
+    const finalSummary = summaryResult.http && summaryResult.tls
+      ? summaryResult
+      : summaryResult.http ?? summaryResult.tls ?? {};
+    transitionToSucceeded(db, job.id, JSON.stringify(finalSummary));
   } catch (err) {
     transitionToFailed(
       db,

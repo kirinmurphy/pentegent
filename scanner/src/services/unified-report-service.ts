@@ -4,12 +4,15 @@ import type {
   UnifiedReport,
   HttpReportData,
   HttpSummaryData,
+  TlsReportData,
+  TlsSummaryData,
   ScanTypeId,
 } from "@penetragent/shared";
 import { detectTechnologies } from "../scanTypes/detect-technology.js";
 
 export interface UnifiedReportBuilder {
   addHttpScan(report: HttpReportData, summary: HttpSummaryData): void;
+  addTlsScan(report: TlsReportData, summary: TlsSummaryData): void;
   build(): UnifiedReport;
   write(reportsDir: string): void;
 }
@@ -32,17 +35,24 @@ export function createUnifiedReport(
       criticalFindings.push(...summaryData.criticalFindings);
     },
 
+    addTlsScan(report: TlsReportData, summaryData: TlsSummaryData) {
+      scanTypes.push("tls");
+      scans.tls = report;
+      summary.tls = summaryData;
+      criticalFindings.push(...summaryData.criticalFindings);
+    },
+
     build(): UnifiedReport {
       if (builtReport) return builtReport;
 
       const httpData = scans.http;
-      const detectedTechnologies = httpData
-        ? detectTechnologies({
-            urls: httpData.pages.map((p) => p.url),
-            headers: httpData.pages.flatMap((p) => p.infoLeakage),
-            metaGeneratorValues: httpData.metaGenerators,
-          })
-        : [];
+      const tlsData = scans.tls;
+      const detectedTechnologies = detectTechnologies({
+        urls: httpData ? httpData.pages.map((p) => p.url) : [],
+        headers: httpData ? httpData.pages.flatMap((p) => p.infoLeakage) : [],
+        metaGeneratorValues: httpData ? httpData.metaGenerators : [],
+        tlsCertIssuer: tlsData?.certificate.issuer,
+      });
 
       builtReport = {
         jobId,

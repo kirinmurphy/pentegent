@@ -55,7 +55,7 @@ describe("formatSummary", () => {
       "    Good: 3",
       "    Weak: 1",
       "    Missing: 2",
-      "  http:",
+      "  HTTP Analysis:",
       "    Pages Scanned: 15",
       "    Issues Found: 8",
     ]);

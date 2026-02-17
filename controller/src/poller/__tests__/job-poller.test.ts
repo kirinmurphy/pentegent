@@ -295,7 +295,7 @@ describe("JobPoller", () => {
 
       expect(actualChatId).toBe(chatId);
       expect(options!.caption).toContain("headers:");
-      expect(options!.caption).toContain("http:");
+      expect(options!.caption).toContain("HTTP Analysis:");
       expect(options!.caption).toContain("Good: 3");
       expect(options!.caption).toContain("Pages Scanned: 15");
     });

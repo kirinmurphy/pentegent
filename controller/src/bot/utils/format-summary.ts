@@ -6,6 +6,9 @@ const FIELD_LABELS: Record<string, string> = {
   pagesScanned: "Pages Scanned",
   issuesFound: "Issues Found",
   criticalFindings: "Critical Findings",
+  host: "Host",
+  http: "HTTP Analysis",
+  tls: "SSL/TLS Analysis",
 };
 
 function getFieldLabel(key: string): string {
