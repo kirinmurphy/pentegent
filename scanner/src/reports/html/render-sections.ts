@@ -6,6 +6,7 @@ import type {
   ProcessedReportData,
   PrintChecklistSection,
   AiPromptData,
+  AggregatedIssue,
 } from "../report-data-service.js";
 
 export { renderTlsSection } from "./render-tls-section.js";
@@ -13,7 +14,10 @@ export { renderTlsSection } from "./render-tls-section.js";
 export function renderHeadersSection(data: ProcessedReportData): string {
   if (data.totalPages === 0) return "";
 
-  const { good, weak, missing } = data.headerGradeSummary;
+  const { good } = data.headerGradeSummary;
+  const sortedIssues = sortBySeverity(data.issues);
+  const criticalCount = sortedIssues.filter((i) => i.isCritical).length;
+  const warningCount = sortedIssues.length - criticalCount;
 
   const summaryCards = `
     <div class="summary">
@@ -21,24 +25,30 @@ export function renderHeadersSection(data: ProcessedReportData): string {
         <h4>Good</h4>
         <div class="value">${good}</div>
       </div>
-      <div class="summary-card">
-        <h4>Weak</h4>
-        <div class="value">${weak}</div>
+      <div class="summary-card${criticalCount > 0 ? " critical" : ""}">
+        <h4>Critical</h4>
+        <div class="value">${criticalCount}</div>
       </div>
-      <div class="summary-card critical">
-        <h4>Missing</h4>
-        <div class="value">${missing}</div>
+      <div class="summary-card${warningCount > 0 ? " warning" : ""}">
+        <h4>Warning</h4>
+        <div class="value">${warningCount}</div>
       </div>
     </div>
   `;
 
-  const redirectInfo = data.redirectChain.length > 1
-    ? `<div class="url-info">
+  const redirectInfo =
+    data.redirectChain.length > 1
+      ? `<div class="url-info">
         <p><strong>Redirect Chain:</strong> ${data.redirectChain.map(escapeHtml).join(" &rarr; ")}</p>
        </div>`
-    : "";
+      : "";
 
-  const issueCards = renderIssueCards(data.issues, data.isMultiPage, data.totalPages, data.matchedFrameworks);
+  const issueCards = renderIssueCards(
+    sortedIssues,
+    data.isMultiPage,
+    data.totalPages,
+    data.matchedFrameworks,
+  );
 
   const scannedPagesTable = data.isMultiPage
     ? `
@@ -51,13 +61,15 @@ export function renderHeadersSection(data: ProcessedReportData): string {
           </thead>
           <tbody>
             ${data.scannedPages
-              .map((page) => `
+              .map(
+                (page) => `
                 <tr>
                   <td>${escapeHtml(page.url)}</td>
                   <td>${page.statusCode}</td>
                   <td>${escapeHtml(humanizeContentType(page.contentType))}</td>
                 </tr>
-              `)
+              `,
+              )
               .join("")}
           </tbody>
         </table>
@@ -80,24 +92,38 @@ export function renderHeadersSection(data: ProcessedReportData): string {
 export function renderCookieSection(data: ProcessedReportData): string {
   if (data.totalPages === 0) return "";
 
-  const hasIssues = data.cookieIssues.length > 0;
-  const { totalCookies, insecureCookies } = data.cookieSummary;
+  const sortedCookieIssues = sortBySeverity(data.cookieIssues);
+  const hasIssues = sortedCookieIssues.length > 0;
+  const { totalCookies } = data.cookieSummary;
+  const cookieCritical = sortedCookieIssues.filter((i) => i.isCritical).length;
+  const cookieWarning = sortedCookieIssues.length - cookieCritical;
 
-  const summaryCards = hasIssues ? `
+  const summaryCards = hasIssues
+    ? `
     <div class="summary">
       <div class="summary-card">
         <h4>Cookies Found</h4>
         <div class="value">${totalCookies}</div>
       </div>
-      <div class="summary-card${insecureCookies > 0 ? " critical" : " good"}">
-        <h4>Insecure Cookies</h4>
-        <div class="value">${insecureCookies}</div>
+      <div class="summary-card${cookieCritical > 0 ? " critical" : ""}">
+        <h4>Critical</h4>
+        <div class="value">${cookieCritical}</div>
+      </div>
+      <div class="summary-card${cookieWarning > 0 ? " warning" : ""}">
+        <h4>Warning</h4>
+        <div class="value">${cookieWarning}</div>
       </div>
     </div>
-  ` : "";
+  `
+    : "";
 
   const issueCards = hasIssues
-    ? renderIssueCards(data.cookieIssues, data.isMultiPage, data.totalPages, data.matchedFrameworks)
+    ? renderIssueCards(
+        sortedCookieIssues,
+        data.isMultiPage,
+        data.totalPages,
+        data.matchedFrameworks,
+      )
     : `<p class="empty-state">No cookie security issues found</p>`;
 
   return `
@@ -112,28 +138,35 @@ export function renderCookieSection(data: ProcessedReportData): string {
 export function renderScriptSection(data: ProcessedReportData): string {
   if (data.totalPages === 0) return "";
 
-  const hasIssues = data.groupedScriptIssues.length > 0;
-  const { externalScripts, missingSri, vulnerableLibraries } = data.scriptSummary;
+  const sortedScriptIssues = [...data.groupedScriptIssues].sort(
+    (a, b) => Number(b.isCritical) - Number(a.isCritical),
+  );
+  const hasIssues = sortedScriptIssues.length > 0;
+  const { externalScripts } = data.scriptSummary;
+  const scriptCritical = sortedScriptIssues.filter((i) => i.isCritical).length;
+  const scriptWarning = sortedScriptIssues.length - scriptCritical;
 
-  const summaryCards = hasIssues ? `
+  const summaryCards = hasIssues
+    ? `
     <div class="summary">
       <div class="summary-card">
         <h4>External Scripts</h4>
         <div class="value">${externalScripts}</div>
       </div>
-      <div class="summary-card${missingSri > 0 ? " critical" : " good"}">
-        <h4>Missing SRI</h4>
-        <div class="value">${missingSri}</div>
+      <div class="summary-card${scriptCritical > 0 ? " critical" : ""}">
+        <h4>Critical</h4>
+        <div class="value">${scriptCritical}</div>
       </div>
-      <div class="summary-card${vulnerableLibraries > 0 ? " critical" : " good"}">
-        <h4>Vulnerable Libraries</h4>
-        <div class="value">${vulnerableLibraries}</div>
+      <div class="summary-card${scriptWarning > 0 ? " warning" : ""}">
+        <h4>Warning</h4>
+        <div class="value">${scriptWarning}</div>
       </div>
     </div>
-  ` : "";
+  `
+    : "";
 
   const issueCards = hasIssues
-    ? renderGroupedScriptCards(data.groupedScriptIssues, data.matchedFrameworks)
+    ? renderGroupedScriptCards(sortedScriptIssues, data.matchedFrameworks)
     : `<p class="empty-state">No script security issues found</p>`;
 
   return `
@@ -148,24 +181,33 @@ export function renderScriptSection(data: ProcessedReportData): string {
 export function renderCorsSection(data: ProcessedReportData): string {
   if (data.totalPages === 0) return "";
 
-  const hasIssues = data.corsIssues.length > 0;
-  const { pagesTested, issuesFound } = data.corsSummary;
+  const sortedCorsIssues = sortBySeverity(data.corsIssues);
+  const hasIssues = sortedCorsIssues.length > 0;
+  const { pagesTested } = data.corsSummary;
+  const corsCritical = sortedCorsIssues.filter((i) => i.isCritical).length;
+  const corsWarning = sortedCorsIssues.length - corsCritical;
 
-  const summaryCards = hasIssues ? `
+  const summaryCards = hasIssues
+    ? `
     <div class="summary">
       <div class="summary-card">
         <h4>Pages Tested</h4>
         <div class="value">${pagesTested}</div>
       </div>
-      <div class="summary-card${issuesFound > 0 ? " critical" : " good"}">
-        <h4>Issues Found</h4>
-        <div class="value">${issuesFound}</div>
+      <div class="summary-card${corsCritical > 0 ? " critical" : ""}">
+        <h4>Critical</h4>
+        <div class="value">${corsCritical}</div>
+      </div>
+      <div class="summary-card${corsWarning > 0 ? " warning" : ""}">
+        <h4>Warning</h4>
+        <div class="value">${corsWarning}</div>
       </div>
     </div>
-  ` : "";
+  `
+    : "";
 
   const issueCards = hasIssues
-    ? renderIssueCards(data.corsIssues, false, 0, data.matchedFrameworks)
+    ? renderIssueCards(sortedCorsIssues, false, 0, data.matchedFrameworks)
     : `<p class="empty-state">No CORS issues found</p>`;
 
   return `
@@ -203,14 +245,16 @@ export function renderPrintChecklistBar(
 ): string {
   if (printChecklist.length === 0) return "";
 
-  const buttons = matchedFrameworks.length > 0
-    ? [
-        `<button class="fix-btn print-btn" data-fw="generic">Default</button>`,
-        ...matchedFrameworks.map((fw) =>
-          `<button class="fix-btn print-btn" data-fw="${fw.slug}">${escapeHtml(fw.name)}</button>`
-        ),
-      ].join("")
-    : `<button class="fix-btn print-btn" data-fw="generic">Print</button>`;
+  const buttons =
+    matchedFrameworks.length > 0
+      ? [
+          `<button class="fix-btn print-btn" data-fw="generic">Default</button>`,
+          ...matchedFrameworks.map(
+            (fw) =>
+              `<button class="fix-btn print-btn" data-fw="${fw.slug}">${escapeHtml(fw.name)}</button>`,
+          ),
+        ].join("")
+      : `<button class="fix-btn print-btn" data-fw="generic">Print</button>`;
 
   return `
     <div class="print-checklist-bar">
@@ -227,19 +271,24 @@ export function renderPrintView(data: ProcessedReportData): string {
 
   const subtitles = [
     `<p class="print-subtitle print-subtitle-generic">Recommended Fixes</p>`,
-    ...data.matchedFrameworks.map((fw) =>
-      `<p class="print-subtitle print-subtitle-${fw.slug}" style="display:none">Recommended Fixes for ${escapeHtml(fw.name)}</p>`
+    ...data.matchedFrameworks.map(
+      (fw) =>
+        `<p class="print-subtitle print-subtitle-${fw.slug}" style="display:none">Recommended Fixes for ${escapeHtml(fw.name)}</p>`,
     ),
   ].join("\n");
 
-  const sections = data.printChecklist.map((section) => {
-    const items = section.items.map((item) => {
-      const frameworkFixes = item.frameworkFixes
-        .map(({ slug, fix }) =>
-          `<div class="print-item-fix print-fix-${slug}" style="display:none">${escapeHtml(fix)}</div>`)
-        .join("");
+  const sections = data.printChecklist
+    .map((section) => {
+      const items = section.items
+        .map((item) => {
+          const frameworkFixes = item.frameworkFixes
+            .map(
+              ({ slug, fix }) =>
+                `<div class="print-item-fix print-fix-${slug}" style="display:none">${escapeHtml(fix)}</div>`,
+            )
+            .join("");
 
-      return `
+          return `
         <div class="print-item">
           <input type="checkbox">
           <div class="print-item-label">
@@ -249,13 +298,15 @@ export function renderPrintView(data: ProcessedReportData): string {
           </div>
         </div>
       `;
-    }).join("");
+        })
+        .join("");
 
-    return `
+      return `
       <h3 class="print-section-header">${escapeHtml(section.label)}</h3>
       ${items}
     `;
-  }).join("");
+    })
+    .join("");
 
   return `
     <div class="print-view">
@@ -266,4 +317,10 @@ export function renderPrintView(data: ProcessedReportData): string {
       ${sections}
     </div>
   `;
+}
+
+function sortBySeverity(issues: AggregatedIssue[]): AggregatedIssue[] {
+  return [...issues].sort(
+    (a, b) => Number(b.isCritical) - Number(a.isCritical),
+  );
 }

@@ -2,6 +2,8 @@
 
 A security scanning tool you control by sending text messages to a Telegram bot. You tell it "scan this website" and it checks whether the site has its security settings configured properly. It reports back with a grade card — like a health inspection for websites.
 
+![HTML security scan report](./docs/screenshots/security_scan_report.html.png)
+
 ## Getting Started
 
 Follow [these instructions](./docs/getting-started.md) to set up and run Penetragent locally or on a VPS.
@@ -16,57 +18,77 @@ There are only two services:
 
 ## What Happens When You Run a Scan
 
+<img src="./docs/screenshots/telegram_scan_response.png" width="400" alt="Telegram scan response">
+
 1. You DM the bot: `scan https://example.com` (or use curl directly)
 2. The bot sends that request to the scanner's API
 3. The scanner creates a job record in the database (status: QUEUED) and responds immediately
 4. The bot tells you "Scan started!" and begins checking the job status every few seconds in the background
 5. The scanner's worker notices the queued job and picks it up (status: RUNNING)
 6. Before touching the target website, the worker resolves its hostname via DNS and checks that every IP address is public — not localhost, not an internal network address, not anything that could be used to probe infrastructure it shouldn't reach
-7. If the IPs are safe, the worker fetches the website and examines the HTTP response headers
-8. It grades six security headers (things like "does this site force HTTPS?" and "does it prevent clickjacking?") as good, weak, or missing
-9. It also flags information leakage — headers like `Server: Apache/2.4.51` that reveal what software is running
-10. Results are saved to a JSON file and a summary is written to the database (status: SUCCEEDED)
-11. The bot's background poller sees the job is done and messages you the results
+7. If the IPs are safe, the worker runs the requested scan types (HTTP analysis, TLS analysis, or both)
+8. For HTTP: it crawls up to 20 pages, grades security headers, checks cookies, analyzes external scripts, tests CORS configuration, and detects the technology stack
+9. For TLS: it analyzes the SSL certificate, tests protocol versions (SSLv3 through TLS 1.3), and evaluates cipher suites
+10. Results are saved to a JSON report and an HTML report is generated. A summary is written to the database (status: SUCCEEDED)
+11. The bot's background poller sees the job is done and sends you the HTML report as a downloadable document in Telegram
 
 ## Scan Types
 
-Penetragent supports two scan types:
+By default, `scan https://example.com` runs all scan types. You can also run them individually.
 
-### 1. Headers Scan (`headers`)
+### HTTP Analysis (`http`)
 
-A quick, single-page security check. When you run `scan https://example.com headers`, it's answering these questions about the target website:
-
-- **Is HTTPS enforced?** (Strict-Transport-Security) — Does the site tell browsers to always use encryption?
-- **Is JavaScript locked down?** (Content-Security-Policy) — Does the site restrict where scripts can load from?
-- **Is MIME sniffing blocked?** (X-Content-Type-Options) — Does the site prevent browsers from guessing file types?
-- **Is framing blocked?** (X-Frame-Options) — Can other sites embed this one in an iframe (clickjacking risk)?
-- **Is referrer leakage controlled?** (Referrer-Policy) — Does the site leak full URLs when users click outbound links?
-- **Are browser features restricted?** (Permissions-Policy) — Does the site disable camera, microphone, etc. for embedded content?
-- **Is software version exposed?** (Server, X-Powered-By) — Can an attacker see what server software and version is running?
-
-### 2. Crawl Scan (`crawl`)
-
-A comprehensive, multi-page security audit. When you run `scan https://example.com crawl`, it:
+A multi-page security audit. When you run `scan https://example.com http`, it:
 
 - **Crawls your site** — Discovers and follows up to 20 pages from your target domain
-- **Checks each page** — Tests every discovered page for security issues
-- **Identifies problems** — Detects missing headers, information disclosure, mixed content, and potential XSS patterns
-- **Reports critical findings** — Highlights the most important security gaps
-- **All passive** — No attacks, no exploitation, just observation and analysis
+- **Grades security headers** — Checks six headers (HSTS, CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) as good, weak, or missing
+- **Flags information leakage** — Headers like `Server: Apache/2.4.51` that reveal software versions
+- **Analyzes cookies** — Checks for missing Secure, HttpOnly, and SameSite attributes
+- **Checks external scripts** — Identifies scripts missing Subresource Integrity (SRI) and known vulnerable libraries
+- **Tests CORS configuration** — Detects wildcard origins, origin reflection, and credential misconfiguration
+- **Detects technology stack** — Identifies frameworks and CMS platforms from headers and HTML
 
-The crawl scan provides broader coverage than the headers scan and is useful for getting a complete picture of your site's security posture.
+### SSL/TLS Analysis (`tls`)
 
-## Managing Scan History
+When you run `scan https://example.com tls`, it:
+
+- **Analyzes the SSL certificate** — Subject, issuer, expiration, self-signed detection, hostname matching, SANs
+- **Tests protocol versions** — Checks support for TLS 1.0, 1.1, 1.2, and 1.3, flagging deprecated versions
+- **Evaluates cipher suites** — Assesses cipher strength and forward secrecy support
+- **Validates the certificate chain** — Verifies the full chain from server certificate to root CA
+
+## HTML Reports
+
+When a scan completes, the bot sends you a self-contained HTML report as a downloadable document in Telegram. The report includes:
+
+- **Summary cards** — At-a-glance good/critical/warning counts for each section
+- **Issue cards** — Each finding with severity, explanation, and remediation guidance
+- **Cookie, script, and CORS sections** — Dedicated sections for each analysis area (always shown, with "no issues found" when clean)
+- **TLS details** — Certificate info, protocol support table, cipher suite assessment
+- **AI fix prompt** — A copyable prompt you can paste into an AI assistant to get framework-specific configuration fixes
+- **Print checklist** — A printable resolution checklist with checkboxes, filterable by detected framework
+
+Reports are also accessible via the scanner API at `/reports/<jobId>/html`.
+
+## Managing Scans
+
+### Check Status
+
+```
+status abc123-def456...          # Check a specific job's status and results
+```
 
 ### View History
 
 **Recent scans (grouped by target):**
+
 ```
 history           # Last 10 unique targets
 history 25        # Last 25 unique targets
 ```
 
 **All scans for specific target:**
+
 ```
 history example.com              # By hostname
 history https://example.com      # By URL
@@ -75,6 +97,7 @@ history https://example.com      # By URL
 ### Delete Scans
 
 **Delete specific scans:**
+
 ```
 delete abc123-def456...          # Delete single job
 delete example.com               # Delete all scans for target
@@ -82,6 +105,7 @@ delete all                       # Delete all scans
 ```
 
 **All delete commands require confirmation:**
+
 ```
 You: delete example.com
 Bot: This will permanently delete 5 scans for example.com.

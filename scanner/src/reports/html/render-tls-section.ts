@@ -8,7 +8,10 @@ export function renderTlsSection(
 ): string {
   if (!tls) return "";
 
-  const { good, weak, missing } = tls.gradeSummary;
+  const { good } = tls.gradeSummary;
+  const sortedIssues = [...tls.issues].sort((a, b) => Number(b.isCritical) - Number(a.isCritical));
+  const criticalCount = sortedIssues.filter((i) => i.isCritical).length;
+  const warningCount = sortedIssues.length - criticalCount;
 
   const summaryCards = `
     <div class="summary">
@@ -16,19 +19,19 @@ export function renderTlsSection(
         <h4>Good</h4>
         <div class="value">${good}</div>
       </div>
-      <div class="summary-card">
-        <h4>Weak</h4>
-        <div class="value">${weak}</div>
+      <div class="summary-card${criticalCount > 0 ? " critical" : ""}">
+        <h4>Critical</h4>
+        <div class="value">${criticalCount}</div>
       </div>
-      <div class="summary-card critical">
-        <h4>Missing</h4>
-        <div class="value">${missing}</div>
+      <div class="summary-card${warningCount > 0 ? " warning" : ""}">
+        <h4>Warning</h4>
+        <div class="value">${warningCount}</div>
       </div>
     </div>
   `;
 
-  const issueCards = tls.issues.length > 0
-    ? renderIssueCards(tls.issues, false, 0, globalFrameworks)
+  const issueCards = sortedIssues.length > 0
+    ? renderIssueCards(sortedIssues, false, 0, globalFrameworks)
     : "";
 
   return `
@@ -49,7 +52,7 @@ function renderCertTable(cert: TlsProcessedData["certificate"]): string {
     <details>
       <summary>Certificate Details</summary>
       <div class="explanation">
-        <table>
+        <div class="table-scroll"><table>
           <tbody>
             <tr><td><strong>Subject</strong></td><td>${escapeHtml(cert.subject)}</td></tr>
             <tr><td><strong>Issuer</strong></td><td>${escapeHtml(cert.issuer)}</td></tr>
@@ -61,7 +64,7 @@ function renderCertTable(cert: TlsProcessedData["certificate"]): string {
             <tr><td><strong>SANs</strong></td><td>${cert.subjectAltNames.length > 0 ? cert.subjectAltNames.map(escapeHtml).join(", ") : "<em>None</em>"}</td></tr>
             <tr><td><strong>Serial</strong></td><td><code>${escapeHtml(cert.serialNumber)}</code></td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </details>
   `;
@@ -74,7 +77,7 @@ function renderChainSection(chain: TlsProcessedData["chain"]): string {
     <details>
       <summary>Certificate Chain (${chain.length} certificates)</summary>
       <div class="explanation">
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>Subject</th><th>Issuer</th><th>Valid From</th><th>Valid To</th><th>Self-Signed</th></tr>
           </thead>
@@ -89,7 +92,7 @@ function renderChainSection(chain: TlsProcessedData["chain"]): string {
               </tr>
             `).join("")}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </details>
   `;
@@ -100,7 +103,7 @@ function renderProtocolTable(protocols: TlsProcessedData["protocols"]): string {
     <details>
       <summary>Protocol Support</summary>
       <div class="explanation">
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>Protocol</th><th>Supported</th><th>Assessment</th></tr>
           </thead>
@@ -113,7 +116,7 @@ function renderProtocolTable(protocols: TlsProcessedData["protocols"]): string {
               </tr>
             `).join("")}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </details>
   `;
@@ -124,14 +127,14 @@ function renderCipherInfo(cipher: TlsProcessedData["cipher"]): string {
     <details>
       <summary>Negotiated Cipher Suite</summary>
       <div class="explanation">
-        <table>
+        <div class="table-scroll"><table>
           <tbody>
             <tr><td><strong>Cipher</strong></td><td>${escapeHtml(cipher.name)}</td></tr>
             <tr><td><strong>Standard Name</strong></td><td>${escapeHtml(cipher.standardName)}</td></tr>
             <tr><td><strong>Forward Secrecy</strong></td><td>${cipher.hasForwardSecrecy ? "Yes" : `<span class="badge critical">No</span>`}</td></tr>
             <tr><td><strong>Assessment</strong></td><td><span class="badge ${cipher.grade === "good" ? "good" : cipher.grade === "weak" ? "" : "critical"}">${escapeHtml(cipher.reason)}</span></td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </details>
   `;

@@ -13,7 +13,7 @@ erDiagram
     JOBS {
         TEXT id PK "UUID"
         TEXT target_id FK
-        TEXT scan_type "all|headers (default: all)"
+        TEXT scan_type "all|http|tls (default: all)"
         TEXT status "QUEUED|RUNNING|SUCCEEDED|FAILED|FAILED_ON_RESTART"
         TEXT requested_by "Telegram user ID"
         TEXT worker_id "UUID of worker process"

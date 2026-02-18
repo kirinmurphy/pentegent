@@ -9,7 +9,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
       "targets — List previously scanned targets",
       "scantypes — List available scan types",
       "",
-      "scan <url> — Run a full HTTP security analysis",
+      "scan <url> — Run a full security analysis",
       "status <jobId> — Check scan status and results",
       "",
       "history — Show last 10 unique targets",

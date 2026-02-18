@@ -32,9 +32,9 @@ sequenceDiagram
         alt Private/reserved IP
             W->>DB: UPDATE status → FAILED<br/>(PRIVATE_RANGE_RESTRICTED)
         else Public IP OK
-            W->>W: fetch() target URL
-            W->>W: Grade security headers
-            W->>W: Write reports/<jobId>/headers.json
+            W->>W: Run HTTP scan (crawl, headers,<br/>cookies, scripts, CORS)
+            W->>W: Run TLS scan (cert, protocols, ciphers)
+            W->>W: Generate JSON + HTML reports
             W->>DB: UPDATE status → SUCCEEDED<br/>(summary_json)
         end
     end
@@ -43,8 +43,12 @@ sequenceDiagram
         C->>S: GET /jobs/{jobId}
         S->>DB: SELECT job
         S-->>C: {status, summaryJson, ...}
-        alt Terminal status
-            C-->>U: "Job completed! Status: SUCCEEDED<br/>good: 3, weak: 1, missing: 2"
+        alt Terminal status (SUCCEEDED)
+            C->>S: GET /reports/{jobId}/html
+            S-->>C: HTML report file
+            C-->>U: Send HTML report as document
+        else Terminal status (FAILED)
+            C-->>U: "Scan failed: error message"
         end
     end
 ```
@@ -66,7 +70,10 @@ sequenceDiagram
     Note over W: Worker picks up job...
 
     D->>S: GET /jobs/{jobId}
-    S-->>D: {status: SUCCEEDED, summaryJson: {good: 3, weak: 1, ...}}
+    S-->>D: {status: SUCCEEDED, summaryJson: {http: {...}, tls: {...}}}
+
+    D->>S: GET /reports/{jobId}/html
+    S-->>D: HTML report file
 ```
 
 ## Job State Machine

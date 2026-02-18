@@ -98,8 +98,10 @@ export function renderIssueCards(
         <div class="issue-card">
           <div class="issue-card-header${issue.isCritical ? " critical-issue" : ""}">
             ${icon}
-            <span>${escapeHtml(issue.issue)}</span>
-            ${pageBadge}
+            <div class="issue-card-content">
+              <span>${escapeHtml(issue.issue)}</span>
+              ${pageBadge}
+            </div>
           </div>
           ${explanationContent ? `<div class="issue-card-body">${explanationContent}</div>` : ""}
           ${pageList}
@@ -136,8 +138,10 @@ export function renderGroupedScriptCards(
         <div class="issue-card">
           <div class="issue-card-header${group.isCritical ? " critical-issue" : ""}">
             ${icon}
-            <span>${escapeHtml(group.issueType)}</span>
-            ${badge}
+            <div class="issue-card-content">
+              <span>${escapeHtml(group.issueType)}</span>
+              ${badge}
+            </div>
           </div>
           ${explanationContent ? `<div class="issue-card-body">${explanationContent}</div>` : ""}
           ${scriptList}
