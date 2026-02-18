@@ -71,8 +71,8 @@ if [ "$FINAL_STATUS" = "FAILED" ]; then
   exit 1
 fi
 
-HAS_SUMMARY=$(echo "$JOB_JSON" | grep -c '"summaryJson"' || true)
-HAS_PAGES=$(echo "$JOB_JSON" | grep -c '"pagesScanned"' || true)
+HAS_SUMMARY=$(echo "$JOB_JSON" | grep -c '"summaryJson":{' || true)
+HAS_PAGES=$(echo "$JOB_JSON" | grep -c '"pagesScanned":[0-9]' || true)
 
 if [ "$HAS_SUMMARY" -eq 0 ] || [ "$HAS_PAGES" -eq 0 ]; then
   echo "✗ Job response missing expected fields (summaryJson, pagesScanned)"

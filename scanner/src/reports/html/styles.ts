@@ -1,6 +1,6 @@
 export const HTML_STYLES = `
   :root {
-    --color-body-text: #333;
+    --color-body-text: #ffffff;
     --color-body-bg: #f5f5f5;
     --color-container-bg: white;
     --color-container-shadow: rgba(0,0,0,0.1);

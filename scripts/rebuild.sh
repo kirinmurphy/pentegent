@@ -13,7 +13,7 @@ CONTEXT_FILE="$(pwd)/.claude/hooks/work-context.txt"
 REBUILD_REASON="${1:-Manual rebuild}"
 CHANGED_FILES="${2:-}"
 
-> "$LOG_FILE"
+: > "$LOG_FILE"
 exec > >(tee "$LOG_FILE") 2>&1
 
 echo "=== Rebuild at $(date) ==="

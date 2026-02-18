@@ -19,6 +19,9 @@ export async function analyzeCors(url: string): Promise<CorsIssue[]> {
 
     if (allowOrigin === "*") {
       issues.push("Wildcard CORS origin: server allows requests from any origin");
+      if (allowCredentials) {
+        issues.push("CORS wildcard with credentials: Access-Control-Allow-Origin: * cannot be used with credentials");
+      }
     }
 
     if (allowOrigin === CORS_ANALYSIS_CONFIG.testOrigin) {

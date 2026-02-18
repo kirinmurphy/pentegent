@@ -65,9 +65,9 @@ export async function fetchPage(
     }
 
     const contentType = response.headers.get("content-type");
-    const body = contentType?.includes("text/html")
-      ? await response.text()
-      : "";
+    const isHtml = contentType?.includes("text/html");
+    if (!isHtml) await response.body?.cancel();
+    const body = isHtml ? await response.text() : "";
 
     const { headerGrades, infoLeakage, contentIssues } = checkSecurityIssues(response, body);
     const finalUrl = redirectChain && redirectChain.length > 0
@@ -76,7 +76,7 @@ export async function fetchPage(
     const links = body ? extractLinks(body, finalUrl) : [];
     const metaGenerator = body ? extractMetaGenerator(body) : null;
 
-    const cookieResult = analyzeCookies(response, url);
+    const cookieResult = analyzeCookies(response, finalUrl);
     const scriptResult = body ? analyzeScripts(body, finalUrl) : null;
 
     return {

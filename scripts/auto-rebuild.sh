@@ -41,7 +41,7 @@ REBUILD_PATTERNS=(
   "^(Dockerfile|docker-compose|infra/):Docker/infrastructure changes"
   "\.dockerignore$:Docker ignore changes"
   "tsconfig.*\.json$:TypeScript config changes"
-  "\.swcrc$|\.babelrc:Build tool config changes"
+  "\.(swcrc|babelrc)$:Build tool config changes"
   "^shared/src/:Shared package changes"
   "^scanner/src/db/:Database schema changes"
   "\.env:Environment variable changes"
