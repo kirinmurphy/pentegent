@@ -114,6 +114,8 @@ npm run docker:prod   # VPS
 
 Now DM your bot in Telegram: `help`, `scan https://example.com`, `history`, etc.
 
+When a scan completes, the bot sends you a self-contained HTML report as a downloadable document — including summary cards, issue details with remediation guidance, and a printable resolution checklist.
+
 ### Telegram commands
 
 | Command                         | Description                              |
@@ -121,7 +123,7 @@ Now DM your bot in Telegram: `help`, `scan https://example.com`, `history`, etc.
 | `help`                          | Show available commands                  |
 | `targets`                       | List previously scanned targets          |
 | `scantypes`                     | List available scan types                |
-| `scan <url> [scanType]`         | Start a scan on a URL                    |
+| `scan <url> [type]`             | Run a security scan (http, tls, or all)  |
 | `status <jobId>`                | Check the status of a scan job           |
 | `history [target\|number]`      | Show scan history                        |
 | `delete <identifier\|all>`      | Delete scans (requires confirmation)     |
@@ -131,9 +133,9 @@ Now DM your bot in Telegram: `help`, `scan https://example.com`, `history`, etc.
 
 ```text
 help
-scan https://example.com                              # defaults to 'headers' scan
-scan https://example.com headers                      # quick single-page check
-scan https://example.com crawl                        # comprehensive multi-page audit
+scan https://example.com                              # runs all scan types (http + tls)
+scan https://example.com http                         # HTTP analysis only
+scan https://example.com tls                          # SSL/TLS analysis only
 status a1b2c3d4-e5f6-7890-abcd-ef1234567890
 targets
 scantypes
@@ -145,8 +147,9 @@ confirm                                               # confirm deletion
 ```
 
 **Scan types:**
-- `headers` — Fast single-page security header check (default)
-- `crawl` — Crawls up to 20 pages and checks each for security issues
+- `http` — Crawls up to 20 pages, grades security headers, checks cookies, scripts, and CORS
+- `tls` — Analyzes SSL certificates, protocol versions, and cipher suites
+- Default (no type specified) — Runs both `http` and `tls`
 
 ---
 
@@ -182,7 +185,7 @@ The scanner exposes an HTTP API on port 8080. This works whether you're running 
 # Health check
 curl localhost:8080/health
 
-# Scan any public URL (defaults to 'headers' scan)
+# Scan any public URL (defaults to running all scan types)
 curl -X POST localhost:8080/scan \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com","requestedBy":"cli"}'
@@ -190,10 +193,10 @@ curl -X POST localhost:8080/scan \
 # Specify scan type explicitly
 curl -X POST localhost:8080/scan \
   -H 'Content-Type: application/json' \
-  -d '{"url":"https://example.com","scanType":"crawl","requestedBy":"cli"}'
+  -d '{"url":"https://example.com","scanType":"http","requestedBy":"cli"}'
 ```
 
-The response includes a `jobId`. The job moves through `QUEUED → RUNNING → SUCCEEDED` within a few seconds (headers scan) or minutes (crawl scan).
+The response includes a `jobId`. The job moves through `QUEUED → RUNNING → SUCCEEDED` within a few seconds to a minute depending on the scan type and site size.
 
 ```bash
 # Check job status (paste your jobId)
@@ -204,6 +207,9 @@ curl localhost:8080/jobs
 
 # List previously scanned targets
 curl localhost:8080/targets
+
+# Download the HTML report
+curl localhost:8080/reports/<jobId>/html > report.html
 ```
 
 When you pass a `url`, the scanner auto-registers it as a target using the hostname. You can also re-scan a previously scanned target by passing `targetId` instead of `url`:
@@ -214,9 +220,7 @@ curl -X POST localhost:8080/scan \
   -d '{"targetId":"example.com","requestedBy":"cli"}'
 ```
 
-The full scan report is written to:
-- `scanner/reports/<jobId>/headers.json` (for headers scans)
-- `scanner/reports/<jobId>/crawl.json` (for crawl scans)
+Reports are generated in the `scanner/reports/<jobId>/` directory as both JSON and HTML.
 
 ### Full curl API
 
@@ -228,6 +232,8 @@ The full scan report is written to:
 | `GET`    | `/jobs/<jobId>`                   | Check job status                |
 | `GET`    | `/jobs?limit=10&offset=0`         | List jobs (paginated)           |
 | `GET`    | `/jobs?targetId=example.com`      | List jobs for specific target   |
+| `GET`    | `/reports/<jobId>/html`           | Download HTML report            |
+| `GET`    | `/reports/<jobId>/json`           | Download JSON report            |
 | `DELETE` | `/jobs/<jobId>`                   | Delete single job               |
 | `DELETE` | `/jobs?targetId=example.com`      | Delete all jobs for target      |
 | `DELETE` | `/jobs/all`                       | Delete all jobs                 |

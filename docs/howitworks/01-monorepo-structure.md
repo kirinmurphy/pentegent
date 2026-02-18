@@ -12,20 +12,21 @@ graph TB
         end
 
         subgraph "scanner/"
-            S_ROUTES["routes/<br/>health · scan · jobs · targets"]
+            S_ROUTES["routes/<br/>health · scan · jobs · targets · reports"]
             S_SERVICES["services/<br/>job · target"]
             S_DB["db/<br/>connection · migrate"]
             S_WORKER["worker/<br/>worker · execute-scan · reconcile"]
             S_SECURITY["security/<br/>verify-public-only"]
-            S_SCANTYPES["scanTypes/<br/>headers · http"]
+            S_SCANTYPES["scanTypes/<br/>http · tls"]
+            S_REPORTS["reports/<br/>unified-report · report-data<br/>html/ · issue-processing"]
         end
 
         subgraph "controller/"
             C_BOT["bot/<br/>bot · command-parser"]
             C_MW["middleware/<br/>allowlist"]
-            C_CMDS["commands/<br/>help · targets · scantypes<br/>scan · status · history"]
+            C_CMDS["commands/<br/>help · targets · scantypes<br/>scan · status · history<br/>delete · confirm-delete"]
             C_CLIENT["scanner-client/<br/>client"]
-            C_POLLER["poller/<br/>job-poller"]
+            C_POLLER["poller/<br/>job-poller · send-report"]
         end
 
         subgraph "infra/"
@@ -41,6 +42,8 @@ graph TB
     S_WORKER --> S_SERVICES
     S_WORKER --> S_SECURITY
     S_WORKER --> S_SCANTYPES
+    S_WORKER --> S_REPORTS
+    S_SCANTYPES --> S_REPORTS
     C_BOT --> C_MW
     C_BOT --> C_CMDS
     C_CMDS --> C_CLIENT

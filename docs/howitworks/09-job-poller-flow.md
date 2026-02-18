@@ -1,6 +1,6 @@
 # Job Poller Async Flow
 
-The scan command returns immediately to the user. A background poller watches for completion and delivers the result.
+The scan command returns immediately to the user. A background poller watches for completion and delivers the HTML report.
 
 ```mermaid
 sequenceDiagram
@@ -34,7 +34,12 @@ sequenceDiagram
     end
 
     rect rgb(10, 102, 64)
-        P->>U: "Job abc completed!<br/>Status: SUCCEEDED<br/>good: 3, weak: 1, missing: 2"
+        Note over P: SUCCEEDED → fetch and send HTML report
+        P->>S: GET /reports/abc/html
+        S-->>P: HTML report file
+        P->>U: Send HTML document via Telegram
         Note over P: clearInterval, remove from polls map
     end
 ```
+
+On success, the poller fetches the HTML report from the scanner and sends it as a downloadable document in Telegram, with a text summary as the caption. On failure, it sends a text message with the error details.

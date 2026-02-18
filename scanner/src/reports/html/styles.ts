@@ -1,180 +1,92 @@
 export const HTML_STYLES = `
   :root {
-    --color-body-text: #ffffff;
-    --color-body-bg: #f5f5f5;
-    --color-container-bg: white;
-    --color-container-shadow: rgba(0,0,0,0.1);
+    --color-body-text: #e8e8e8;
+    --color-body-bg: #000000;
+    --color-container-bg: #161616;
+    --color-container-shadow: rgba(0,0,0,0.6);
 
-    --color-h1: #2c3e50;
-    --color-h2: #34495e;
-    --color-h2-border: #3498db;
-    --color-h3: #555;
+    --color-h1: #e0e0e0;
+    --color-h2: #c0c0c0;
+    --color-h2-border: #4a7a9b;
+    --color-h3: #a0a0a0;
 
-    --color-meta-text: #7f8c8d;
-    --color-meta-bg: #ecf0f1;
-    --color-meta-link: #2980b9;
+    --color-meta-text: #888888;
+    --color-meta-bg: #1a1a1a;
+    --color-meta-link: #6ba3c8;
 
-    --color-control-bar-bg: #2c3e50;
-    --color-control-bar-text: white;
-    --color-control-bar-border: rgba(255,255,255,0.3);
-    --color-control-bar-shadow: rgba(0,0,0,0.15);
-    --color-control-bar-hover: rgba(255,255,255,0.15);
-    --color-control-bar-active: #3498db;
+    --color-control-bar-bg: #2a2a2a;
+    --color-control-bar-text: #e0e0e0;
+    --color-control-bar-border: rgba(255,255,255,0.18);
+    --color-control-bar-shadow: rgba(0,0,0,0.6);
+    --color-control-bar-hover: rgba(255,255,255,0.1);
+    --color-control-bar-active: #4a7a9b;
 
-    --color-summary-bg: #f8f9fa;
-    --color-summary-border: #3498db;
-    --color-summary-label: #7f8c8d;
-    --color-summary-value: #2c3e50;
-    --color-summary-good-border: #27ae60;
-    --color-summary-good-bg: #f0faf4;
-    --color-summary-critical-border: #e74c3c;
-    --color-summary-critical-bg: #fef5f5;
+    --color-summary-bg: #1a1a1a;
+    --color-summary-border: #4a7a9b;
+    --color-summary-label: #888888;
+    --color-summary-value: #e0e0e0;
+    --color-summary-good-border: #3daf6a;
+    --color-summary-good-bg: #122e1a;
+    --color-summary-critical-border: #e03030;
+    --color-summary-critical-bg: #451414;
+    --color-summary-warning-border: #c49b30;
+    --color-summary-warning-bg: #302808;
 
-    --color-finding-bg: #fff3cd;
-    --color-finding-border: #ffc107;
-    --color-finding-critical-bg: #f8d7da;
-    --color-finding-critical-border: #dc3545;
+    --color-finding-bg: #302808;
+    --color-finding-border: #c49b30;
+    --color-finding-critical-bg: #451414;
+    --color-finding-critical-border: #e03030;
 
-    --color-table-header-bg: #34495e;
-    --color-table-header-text: white;
-    --color-table-border: #ddd;
-    --color-table-hover: #f8f9fa;
+    --color-table-header-bg: #1a1a1a;
+    --color-table-header-text: #e0e0e0;
+    --color-table-border: #2a2a2a;
+    --color-table-hover: #1e1e1e;
 
-    --color-badge-bg: #e2e3e5;
-    --color-badge-text: #383d41;
-    --color-badge-hover: #d0d2d5;
+    --color-badge-bg: #2a2a2a;
+    --color-badge-text: #c0c0c0;
+    --color-badge-hover: #323232;
 
-    --color-issue-card-border: #e0e0e0;
-    --color-issue-card-header-bg: #fff3cd;
-    --color-issue-card-critical-bg: #f8d7da;
-    --color-issue-card-pages-bg: #f8f9fa;
-    --color-issue-card-pages-text: #555;
+    --color-issue-card-border: #2a2a2a;
+    --color-issue-card-header-bg: #302808;
+    --color-issue-card-critical-bg: #451414;
+    --color-issue-card-pages-bg: #1a1a1a;
+    --color-issue-card-pages-text: #a0a0a0;
 
-    --color-details-border: #e0e0e0;
-    --color-details-bg: #f8f9fa;
-    --color-details-text: #34495e;
-    --color-details-hover: #ecf0f1;
+    --color-details-border: #2a2a2a;
+    --color-details-bg: #1a1a1a;
+    --color-details-text: #c0c0c0;
+    --color-details-hover: #222222;
 
-    --color-explanation-bg: #fafbfc;
-    --color-issue-details-bg: #fafbfc;
-    --color-issue-details-text: #555;
+    --color-explanation-bg: #1a1a1a;
+    --color-issue-details-bg: #1a1a1a;
+    --color-issue-details-text: #e8e8e8;
 
-    --color-issue-fix-bg: #f0f7ff;
-    --color-issue-fix-code-bg: #2d2d2d;
-    --color-issue-fix-code-text: #f8f8f2;
+    --color-issue-fix-bg: #181818;
+    --color-issue-fix-code-bg: #0a0a0a;
+    --color-issue-fix-code-text: #d4d4d4;
 
-    --color-inline-code-bg: #f4f4f4;
+    --color-inline-code-bg: #202020;
 
-    --color-url-info-bg: #e8f4f8;
+    --color-url-info-bg: #181818;
 
-    --color-ai-prompt-accent: #3498db;
-    --color-ai-prompt-body-bg: #f8f9fa;
-    --color-ai-prompt-desc-text: #555;
-    --color-ai-prompt-desc-border: #e0e0e0;
+    --color-ai-prompt-accent: #4a7a9b;
+    --color-ai-prompt-body-bg: #1a1a1a;
+    --color-ai-prompt-desc-text: #a0a0a0;
+    --color-ai-prompt-desc-border: #2a2a2a;
 
-    --color-copy-btn-bg: white;
-    --color-copy-btn-text: #3498db;
-    --color-copy-btn-hover: #ecf0f1;
+    --color-copy-btn-bg: #202020;
+    --color-copy-btn-text: #6ba3c8;
+    --color-copy-btn-hover: #2a2a2a;
 
-    --color-empty-state: #95a5a6;
-    --color-tls-subtitle: #888;
+    --color-empty-state: #707070;
+    --color-tls-subtitle: #888888;
 
-    --color-print-bar-bg: #2c3e50;
-    --color-print-bar-text: white;
-    --color-print-meta: #7f8c8d;
-    --color-print-subtitle: #555;
-    --color-print-item-border: #eee;
-    --color-print-fix-text: #555;
-  }
-
-  @media screen and (prefers-color-scheme: dark) {
-    :root {
-      --color-body-text: #e8e8e8;
-      --color-body-bg: #131316;
-      --color-container-bg: #1a1a1e;
-      --color-container-shadow: rgba(0,0,0,0.6);
-
-      --color-h1: #e0e0e0;
-      --color-h2: #c0c4cc;
-      --color-h2-border: #4a7a9b;
-      --color-h3: #a0a4ac;
-
-      --color-meta-text: #8890a0;
-      --color-meta-bg: #1e1e24;
-      --color-meta-link: #6ba3c8;
-
-      --color-control-bar-bg: #1e1e24;
-      --color-control-bar-text: #e0e0e0;
-      --color-control-bar-border: rgba(255,255,255,0.18);
-      --color-control-bar-shadow: rgba(0,0,0,0.6);
-      --color-control-bar-hover: rgba(255,255,255,0.1);
-      --color-control-bar-active: #4a7a9b;
-
-      --color-summary-bg: #1e1e24;
-      --color-summary-border: #4a7a9b;
-      --color-summary-label: #8890a0;
-      --color-summary-value: #e0e0e0;
-      --color-summary-good-border: #3daf6a;
-      --color-summary-good-bg: #152418;
-      --color-summary-critical-border: #d0524f;
-      --color-summary-critical-bg: #2a161a;
-
-      --color-finding-bg: #2e280f;
-      --color-finding-border: #c49b30;
-      --color-finding-critical-bg: #2e151a;
-      --color-finding-critical-border: #c45050;
-
-      --color-table-header-bg: #1e1e24;
-      --color-table-header-text: #e0e0e0;
-      --color-table-border: #2a2a32;
-      --color-table-hover: #222228;
-
-      --color-badge-bg: #2a2a32;
-      --color-badge-text: #c0c4cc;
-      --color-badge-hover: #32323a;
-
-      --color-issue-card-border: #2a2a32;
-      --color-issue-card-header-bg: #2e280f;
-      --color-issue-card-critical-bg: #2e151a;
-      --color-issue-card-pages-bg: #1e1e24;
-      --color-issue-card-pages-text: #a0a4ac;
-
-      --color-details-border: #2a2a32;
-      --color-details-bg: #1e1e24;
-      --color-details-text: #c0c4cc;
-      --color-details-hover: #262630;
-
-      --color-explanation-bg: #1e1e24;
-      --color-issue-details-bg: #1e1e24;
-      --color-issue-details-text: #a0a4ac;
-
-      --color-issue-fix-bg: #1c1c22;
-      --color-issue-fix-code-bg: #131316;
-      --color-issue-fix-code-text: #d4d8e0;
-
-      --color-inline-code-bg: #22222a;
-
-      --color-url-info-bg: #1c1c22;
-
-      --color-ai-prompt-accent: #4a7a9b;
-      --color-ai-prompt-body-bg: #1e1e24;
-      --color-ai-prompt-desc-text: #a0a4ac;
-      --color-ai-prompt-desc-border: #2a2a32;
-
-      --color-copy-btn-bg: #22222a;
-      --color-copy-btn-text: #6ba3c8;
-      --color-copy-btn-hover: #2a2a32;
-
-      --color-empty-state: #707480;
-      --color-tls-subtitle: #8890a0;
-
-      --color-print-bar-bg: #1e1e24;
-      --color-print-bar-text: #e0e0e0;
-      --color-print-meta: #8890a0;
-      --color-print-subtitle: #a0a4ac;
-      --color-print-item-border: #2a2a32;
-      --color-print-fix-text: #a0a4ac;
-    }
+    --color-print-bar-bg: #1a1a1a;
+    --color-print-bar-text: #e0e0e0;
+    --color-print-meta: #888888;
+    --color-print-subtitle: #a0a0a0;
+    --color-print-item-border: #2a2a2a;
+    --color-print-fix-text: #a0a0a0;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -186,7 +98,7 @@ export const HTML_STYLES = `
     padding: 20px;
   }
   .container {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     background: var(--color-container-bg);
     padding: 30px;
@@ -195,7 +107,7 @@ export const HTML_STYLES = `
   }
   h1 {
     color: var(--color-h1);
-    margin-bottom: 10px;
+    margin-bottom: 4px;
     font-size: 2.5em;
   }
   h2 {
@@ -243,7 +155,6 @@ export const HTML_STYLES = `
     justify-content: flex-end;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: 0 2px 8px var(--color-control-bar-shadow);
   }
   .control-bar .group {
     display: flex;
@@ -281,7 +192,7 @@ export const HTML_STYLES = `
   }
   .summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin: 15px 0;
   }
@@ -298,6 +209,10 @@ export const HTML_STYLES = `
   .summary-card.good {
     border-left-color: var(--color-summary-good-border);
     background: var(--color-summary-good-bg);
+  }
+  .summary-card.warning {
+    border-left-color: var(--color-summary-warning-border);
+    background: var(--color-summary-warning-bg);
   }
   .summary-card h4 {
     font-size: 0.8em;
@@ -379,7 +294,7 @@ export const HTML_STYLES = `
     box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   }
   .badge-btn .caret {
-    font-size: 0.7em;
+    font-size: 1em;
     display: inline-block;
     transition: transform 0.2s;
   }
@@ -492,8 +407,12 @@ export const HTML_STYLES = `
     align-items: center;
     gap: 10px;
   }
-  .issue-card-header > span:not(.badge-btn) {
+  .issue-card-content {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
   .issue-card-header .issue-icon {
     flex-shrink: 0;
@@ -634,8 +553,88 @@ export const HTML_STYLES = `
     color: var(--color-tls-subtitle);
     margin-bottom: 1rem;
   }
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-scroll table {
+    min-width: 500px;
+  }
+  @media (max-width: 600px) {
+    body {
+      padding: 0;
+    }
+    .container {
+      border-radius: 0;
+      padding: 16px;
+    }
+    .summary {
+      grid-template-columns: 1fr;
+    }
+    .summary-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+    .summary-card h4 {
+      margin-bottom: 0;
+    }
+    .summary-card .value {
+      font-size: 1.3em;
+    }
+    .issue-card-header {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px 10px;
+      align-items: start;
+    }
+    .issue-card-content {
+      display: block;
+    }
+    .issue-card-header .badge-btn {
+      display: inline;
+      background: none;
+      border: none;
+      padding: 0;
+      border-radius: 0;
+      text-decoration: underline;
+      font-size: 0.82em;
+      white-space: nowrap;
+    }
+    .issue-card-header .badge-btn:hover {
+      background: none;
+      border: none;
+      box-shadow: none;
+    }
+    details .explanation {
+      padding: 10px;
+    }
+    .explanation table {
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ai-prompt-description {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .ai-prompt-description .ai-copy-btn {
+      align-self: flex-start;
+    }
+    .print-checklist-bar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .control-bar {
+      justify-content: flex-start;
+    }
+    .control-bar .group {
+      flex-wrap: wrap;
+    }
+  }
   @media print {
-    body { background: white !important; padding: 0 !important; }
+    body { background: #fff !important; color: #333 !important; padding: 0 !important; }
     .container { box-shadow: none !important; padding: 15px !important; }
     .container > *:not(.print-view) { display: none !important; }
     .print-view { display: block !important; }

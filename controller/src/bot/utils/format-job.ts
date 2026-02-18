@@ -4,26 +4,25 @@ import { formatSummary } from "./format-summary.js";
 import { formatHumanDate } from "./format-date.js";
 import { formatDuration } from "./format-duration.js";
 
-const SEPARATOR = "───────────────────";
+const SEPARATOR = "━━━━━━━━━━━━━━━━━";
 
 export function formatJob(job: JobPublic): string {
   const lines = [
     SEPARATOR,
     `Security Scan Report - ${job.status}`,
-    "",
     job.targetId,
-    job.jobId,
   ];
 
   if (job.scanType !== "all") {
-    const scanTypeName = SCAN_TYPES[job.scanType as ScanTypeId]?.name || job.scanType;
+    const scanTypeName =
+      SCAN_TYPES[job.scanType as ScanTypeId]?.name || job.scanType;
     lines.push(`Scan Type: ${scanTypeName}`);
   }
 
   if (job.finishedAt && job.createdAt) {
     const duration = formatDuration(job.createdAt, job.finishedAt);
     const formattedDate = formatHumanDate(job.finishedAt);
-    const durationSuffix = duration ? ` (completed in ${duration})` : "";
+    const durationSuffix = duration ? ` (${duration})` : "";
     lines.push(`Finished: ${formattedDate}${durationSuffix}`);
   } else if (job.createdAt) {
     lines.push(`Created: ${formatHumanDate(job.createdAt)}`);
