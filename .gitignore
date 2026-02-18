@@ -6,7 +6,10 @@ dist/
 *.tsbuildinfo
 .env
 /data/
-reports/
+/reports/
 .claude/settings.local.json
 
 .DS_Store
+auto-rebuild.log
+
+.claude/hooks/work-context.txt

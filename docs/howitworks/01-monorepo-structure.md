@@ -17,7 +17,7 @@ graph TB
             S_DB["db/<br/>connection · migrate"]
             S_WORKER["worker/<br/>worker · execute-scan · reconcile"]
             S_SECURITY["security/<br/>verify-public-only"]
-            S_SCANTYPES["scanTypes/<br/>headers · crawl"]
+            S_SCANTYPES["scanTypes/<br/>headers · http"]
         end
 
         subgraph "controller/"

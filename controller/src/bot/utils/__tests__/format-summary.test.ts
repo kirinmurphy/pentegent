@@ -12,9 +12,9 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary);
 
     expect(lines).toEqual([
-      "  good: 3",
-      "  weak: 1",
-      "  missing: 2",
+      "  Good: 3",
+      "  Weak: 1",
+      "  Missing: 2",
     ]);
   });
 
@@ -26,7 +26,7 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary);
 
     expect(lines).toEqual([
-      "  infoLeakage: Server: nginx, X-Powered-By: PHP",
+      "  Info Leakage: Server: nginx, X-Powered-By: PHP",
     ]);
   });
 
@@ -38,30 +38,30 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary);
 
     expect(lines).toEqual([
-      "  infoLeakage: none",
+      "  Info Leakage: none",
     ]);
   });
 
   it("should format nested objects with proper indentation", () => {
     const summary = {
       headers: { good: 3, weak: 1, missing: 2 },
-      crawl: { pagesScanned: 15, issuesFound: 8 },
+      http: { pagesScanned: 15, issuesFound: 8 },
     };
 
     const lines = formatSummary(summary);
 
     expect(lines).toEqual([
       "  headers:",
-      "    good: 3",
-      "    weak: 1",
-      "    missing: 2",
-      "  crawl:",
-      "    pagesScanned: 15",
-      "    issuesFound: 8",
+      "    Good: 3",
+      "    Weak: 1",
+      "    Missing: 2",
+      "  HTTP Analysis:",
+      "    Pages Scanned: 15",
+      "    Issues Found: 8",
     ]);
   });
 
-  it("should handle mixed types in summary", () => {
+  it("should show critical findings as a count", () => {
     const summary = {
       pagesScanned: 5,
       issuesFound: 3,
@@ -71,12 +71,9 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary);
 
     expect(lines).toEqual([
-      "  pagesScanned: 5",
-      "  issuesFound: 3",
-      "",
-      "Critical Findings:",
-      "  • Missing HSTS",
-      "  • Missing CSP",
+      "  Pages Scanned: 5",
+      "  Issues Found: 3",
+      "  Critical Issues: 2",
     ]);
   });
 
@@ -89,8 +86,8 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary, "    ");
 
     expect(lines).toEqual([
-      "    good: 3",
-      "    weak: 1",
+      "    Good: 3",
+      "    Weak: 1",
     ]);
   });
 
@@ -116,7 +113,7 @@ describe("formatSummary", () => {
     expect(lines).toEqual([]);
   });
 
-  it("should format criticalFindings as bullet list", () => {
+  it("should show critical issues count in flat summary", () => {
     const summary = {
       good: 3,
       weak: 1,
@@ -127,13 +124,11 @@ describe("formatSummary", () => {
 
     const lines = formatSummary(summary);
 
-    expect(lines).toContain("");
-    expect(lines).toContain("Critical Findings:");
-    expect(lines).toContain("  • Missing HSTS header");
-    expect(lines).toContain("  • Missing CSP header");
+    expect(lines).toContain("  Critical Issues: 2");
+    expect(lines).not.toContain("  Critical Issues:");
   });
 
-  it("should show critical findings prominently", () => {
+  it("should show critical issues count in nested summary", () => {
     const summary = {
       criticalFindings: [
         "Missing HSTS header",
@@ -143,12 +138,8 @@ describe("formatSummary", () => {
     };
 
     const lines = formatSummary(summary);
-    const joined = lines.join("\n");
 
-    expect(joined).toContain("Critical Findings:");
-    expect(joined).toContain("• Missing HSTS header");
-    expect(joined).toContain("• Missing CSP header");
-    expect(joined).toContain("• Server header disclosed: Apache");
+    expect(lines).toEqual(["  Critical Issues: 3"]);
   });
 
   it("should not show empty criticalFindings section", () => {
@@ -160,6 +151,35 @@ describe("formatSummary", () => {
     const lines = formatSummary(summary);
     const joined = lines.join("\n");
 
-    expect(joined).not.toContain("Critical Findings:");
+    expect(joined).not.toContain("Critical");
+  });
+
+  it("should skip host field", () => {
+    const summary = {
+      host: "example.com",
+      good: 3,
+      weak: 0,
+    };
+
+    const lines = formatSummary(summary);
+
+    expect(lines).toEqual([
+      "  Good: 3",
+      "  Weak: 0",
+    ]);
+  });
+
+  it("should skip host in nested objects", () => {
+    const summary = {
+      tls: { host: "example.com", good: 4, missing: 1 },
+    };
+
+    const lines = formatSummary(summary);
+
+    expect(lines).toEqual([
+      "  SSL/TLS Analysis:",
+      "    Good: 4",
+      "    Missing: 1",
+    ]);
   });
 });

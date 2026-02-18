@@ -1,7 +1,6 @@
 import type Database from "better-sqlite3";
 import type { ScannerConfig } from "@penetragent/shared";
-import { ErrorCode, SCAN_TYPES } from "@penetragent/shared";
-import type { ScanTypeId } from "@penetragent/shared";
+import { ErrorCode } from "@penetragent/shared";
 import {
   transitionToSucceeded,
   transitionToFailed,
@@ -13,26 +12,10 @@ import {
   verifyPublicOnly,
   DnsError,
 } from "../security/verify-public-only.js";
-import { runHeadersScan } from "../scanTypes/headers.js";
-import { runCrawlScan } from "../scanTypes/crawl/index.js";
-
-async function runScanType(
-  scanType: ScanTypeId,
-  baseUrl: string,
-  reportsDir: string,
-  jobId: string,
-): Promise<unknown> {
-  switch (scanType) {
-    case "headers": {
-      const { summary } = await runHeadersScan(baseUrl, reportsDir, jobId);
-      return summary;
-    }
-    case "crawl": {
-      const { summary } = await runCrawlScan(baseUrl, reportsDir, jobId);
-      return summary;
-    }
-  }
-}
+import { runHttpScan } from "../scanTypes/http/index.js";
+import { runTlsScan } from "../scanTypes/tls/index.js";
+import { createUnifiedReport } from "../reports/unified-report-service.js";
+import { writeHtmlReport } from "../reports/html/index.js";
 
 export async function executeScan(
   db: Database.Database,
@@ -55,25 +38,39 @@ export async function executeScan(
     throw err;
   }
 
-  try {
-    const typesToRun: ScanTypeId[] =
-      job.scan_type === "all"
-        ? (Object.keys(SCAN_TYPES) as ScanTypeId[])
-        : [job.scan_type as ScanTypeId];
+  const scanType = job.scan_type;
+  const shouldRunHttp = scanType === "http" || scanType === "all";
+  const shouldRunTls = scanType === "tls" || scanType === "all";
 
-    const results: Record<string, unknown> = {};
-    for (const scanType of typesToRun) {
-      results[scanType] = await runScanType(
-        scanType,
-        target.base_url,
-        config.reportsDir,
-        job.id,
-      );
+  try {
+    const reportBuilder = createUnifiedReport(job.id, target.base_url);
+    const summaryResult: { http?: Record<string, unknown>; tls?: Record<string, unknown> } = {};
+
+    if (shouldRunHttp) {
+      const { report, summary } = await runHttpScan(target.base_url);
+      reportBuilder.addHttpScan(report, summary);
+      summaryResult.http = summary as unknown as Record<string, unknown>;
     }
 
-    // If only one scan type ran, use its result directly for backward compat
-    const summary = typesToRun.length === 1 ? results[typesToRun[0]] : results;
-    transitionToSucceeded(db, job.id, JSON.stringify(summary));
+    if (shouldRunTls) {
+      try {
+        const { report, summary } = await runTlsScan(target.base_url);
+        reportBuilder.addTlsScan(report, summary);
+        summaryResult.tls = summary as unknown as Record<string, unknown>;
+      } catch (tlsErr) {
+        console.error(`TLS scan failed for job ${job.id}:`, tlsErr);
+      }
+    }
+
+    reportBuilder.write(config.reportsDir);
+
+    try {
+      writeHtmlReport(config.reportsDir, job.id, target.id);
+    } catch (htmlErr) {
+      console.error(`Failed to write HTML report for job ${job.id}:`, htmlErr);
+    }
+
+    transitionToSucceeded(db, job.id, JSON.stringify(summaryResult));
   } catch (err) {
     transitionToFailed(
       db,

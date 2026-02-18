@@ -1,0 +1,52 @@
+{
+  "url": "https://example.com",
+  "redirectChain": [
+    "https://example.com"
+  ],
+  "finalUrl": "https://example.com",
+  "statusCode": 200,
+  "headers": [
+    {
+      "header": "Strict-Transport-Security",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    },
+    {
+      "header": "Content-Security-Policy",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    },
+    {
+      "header": "X-Content-Type-Options",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    },
+    {
+      "header": "X-Frame-Options",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    },
+    {
+      "header": "Referrer-Policy",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    },
+    {
+      "header": "Permissions-Policy",
+      "value": null,
+      "grade": "missing",
+      "reason": "Header not present"
+    }
+  ],
+  "infoLeakage": [
+    {
+      "header": "Server",
+      "value": "cloudflare"
+    }
+  ]
+}

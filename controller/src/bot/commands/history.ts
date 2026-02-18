@@ -6,6 +6,7 @@ import { detectIdentifier } from "../utils/detect-identifier.js";
 import { sendChunked } from "../utils/send-chunked.js";
 import { resolveTargetId, buildTargetUrl } from "../utils/resolve-target-id.js";
 import { INPUT_ALL, IDENTIFIER_TYPE, CHAT_ACTION } from "../constants.js";
+import { TUNING } from "../../tuning.js";
 export async function handleHistory(params: {
   ctx: Context;
   args: string[];
@@ -46,7 +47,7 @@ export async function handleHistory(params: {
 }
 
 async function showAllScans(ctx: Context, client: ScannerClient): Promise<void> {
-  const { jobs } = await client.listJobs({ limit: 1000 });
+  const { jobs } = await client.listJobs({ limit: TUNING.history.maxJobsLimit });
 
   if (jobs.length === 0) {
     await ctx.reply("No scan history found.");
@@ -94,8 +95,8 @@ async function showTargetHistory(
 
 async function showRecentScans(ctx: Context, args: string[], client: ScannerClient): Promise<void> {
   const limit = args.length > 0 && !isNaN(Number(args[0]))
-    ? Math.min(1000, parseInt(args[0], 10))
-    : 100;
+    ? Math.min(TUNING.history.maxJobsLimit, parseInt(args[0], 10))
+    : TUNING.history.defaultRecentLimit;
   const { jobs } = await client.listJobs({ limit });
 
   if (jobs.length === 0) {
@@ -111,7 +112,7 @@ async function showRecentScans(ctx: Context, args: string[], client: ScannerClie
     createdAt: j.createdAt,
   }));
 
-  const groups = groupJobsByTarget(jobsWithUrl, 10);
+  const groups = groupJobsByTarget(jobsWithUrl, TUNING.history.groupDisplayLimit);
   const lines: string[] = [];
 
   for (const group of groups) {

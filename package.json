@@ -7,7 +7,8 @@
     "controller"
   ],
   "scripts": {
-    "build": "npm run build -w shared && npm run build -w scanner && npm run build -w controller",
+    "clean": "rm -f shared/tsconfig.tsbuildinfo scanner/tsconfig.tsbuildinfo controller/tsconfig.tsbuildinfo",
+    "build": "npm run clean && npm run build -w shared && npm run build -w scanner && npm run build -w controller",
     "test": "npm test -w shared -w scanner -w controller",
     "test:unit": "npm test -w shared -w controller && npm run test:unit -w scanner",
     "test:integration": "npm run test:integration -w scanner",

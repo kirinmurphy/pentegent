@@ -6,6 +6,8 @@ export const JobStatus = {
   FAILED_ON_RESTART: "FAILED_ON_RESTART",
 } as const;
 
+export const IN_PROGRESS_STATUSES = `${JobStatus.RUNNING},${JobStatus.QUEUED}`;
+
 export type JobStatusType = (typeof JobStatus)[keyof typeof JobStatus];
 
 export const TERMINAL_STATUSES = new Set<JobStatusType>([
@@ -15,8 +17,16 @@ export const TERMINAL_STATUSES = new Set<JobStatusType>([
 ]);
 
 export const SCAN_TYPES = {
-  headers: { name: "HTTP Security Headers", description: "Checks HTTP security headers and grades them" },
-  crawl: { name: "Site Crawl", description: "Crawls the site and checks each page for security issues (no attacks)" },
+  http: {
+    name: "HTTP Analysis",
+    description:
+      "Scans pages and analyzes HTTP security headers, content issues, and technology stack",
+  },
+  tls: {
+    name: "SSL/TLS Analysis",
+    description:
+      "Analyzes SSL/TLS certificates, protocol versions, and cipher suites",
+  },
 } as const;
 
 export type ScanTypeId = keyof typeof SCAN_TYPES;
